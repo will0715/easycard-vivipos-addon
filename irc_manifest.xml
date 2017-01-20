@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<irc xmlns="http://www.vivipos.com.tw/2010/irc-syntax-ns#">
+   <module name="easycard_payment_settings" reboot="false">
+        <action>
+            <type>file</type>
+            <file>/data/profile/extensions/easycard_payment@vivicloud.net/*</file>
+        </action>   
+    </module>
+</irc>    
+    

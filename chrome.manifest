@@ -1,0 +1,7 @@
+content easycard_payment chrome/content/ xpcnativewrappers=no
+skin easycard_payment traditional-800x600/1.0 chrome/skin/traditional/
+skin easycard_payment traditional-1024x768/1.0 chrome/skin/traditional/
+locale easycard_payment en chrome/locale/en/
+locale easycard_payment zh-TW chrome/locale/zh-TW/
+locale easycard_payment zh-CN chrome/locale/zh-CN/
+overlay chrome://vivipos/content/mainUIOverlay.xul chrome://easycard_payment/content/overlay.xul
