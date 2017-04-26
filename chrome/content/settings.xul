@@ -64,10 +64,10 @@
                             </vbox>
                 <spacer flex="1" />
                 <hbox id="dialogButtons" class="exitbar">
-                    <button id="save" default="true" class="button-save" oncommand="$do('save', null, 'Settings');"/>
+                    <button id="save" default="true" class="button-save" oncommand="$do('save', null, 'EasycardSettings');"/>
                     <spacer flex="1"/>
                     <button id="vkb" class="button-vkb" oncommand="VirtualKeyboard.toggle();"/>
-                    <button id="close" default="false" class="button-exit" oncommand="$do('exit', null, 'Settings');"/>
+                    <button id="close" default="false" class="button-exit" oncommand="$do('exit', null, 'EasycardSettings');"/>
                 </hbox>
 
             </vbox>

@@ -6,7 +6,7 @@
 
     const __controller__ = {
 
-        name: 'Settings',
+        name: 'EasycardSettings',
         _scriptPath: "/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/",
         _settingFile: "setting.ini",
 
@@ -56,7 +56,7 @@
                 changed: false
             };
 
-            $do('validateForm', data, 'Settings');
+            $do('validateForm', data, 'EasycardSettings');
 
             if (data.changed) {
                 let topwin = GREUtils.XPCOM.getUsefulService("window-mediator").getMostRecentWindow(null);
@@ -124,7 +124,7 @@
     GeckoJS.Controller.extend(__controller__);
 
     window.addEventListener('load', function() {
-        $do('initial', null, 'Settings');
+        $do('initial', null, 'EasycardSettings');
     }, false);
 
 
