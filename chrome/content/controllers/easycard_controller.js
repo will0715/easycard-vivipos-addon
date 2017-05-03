@@ -36,8 +36,8 @@
                 GeckoJS.Controller.getInstanceByName('Keypad').addEventListener('onEnterPress', this.easycardPayout, this);
             }
 
-            if (GeckoJS.Controller.getInstanceByName('Main')) {
-                GeckoJS.Controller.getInstanceByName('Main').addEventListener('onStartShiftChange', this.easycardSettlement, this);
+            if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
+                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('onStartShift', this.easycardSettlement, this);
             }
 
             //startup sign on to get machine ready.
