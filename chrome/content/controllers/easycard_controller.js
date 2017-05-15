@@ -37,7 +37,7 @@
             }
 
             if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
-                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('onShiftChanged', this.easycardSettlement, this);
+                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('shiftChanged', this.easycardSettlement, this);
             }
 
             //startup sign on to get machine ready.
