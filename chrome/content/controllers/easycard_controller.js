@@ -19,12 +19,13 @@
         _sequenceKey: 'easycardSeq',
         _cartController: null,
         _scriptPath: "/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/",
-        _scriptFile: "easycardEDC.sh",
+        _scriptFile: "callicerapi.sh",
         _inFile: "in.data",
         _outputFile: "out.data",
         _tmId: null,
         _isSandbox: false,
         _signOnExpiredTime: 40 * 60 * 1000,
+        _dialogPanel: null,
 
         initial: function() {
             if (!this._cartController) {
@@ -40,15 +41,35 @@
                 GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('shiftChanged', this.easycardSettlement, this);
             }
 
+            this.copyScripts();
+
             //startup sign on to get machine ready.
-            let dialogPanel = this._showDialog(_('signon_process'));
+            this._dialogPanel = this._showDialog(_('signon_process'));
             try {
                 let sequence = this._getSequence();
                 this._easycardSignOn(sequence);
             } catch (e) {
                 this.log('DEBUG', e.message);
             } finally {
-                dialogPanel.close();
+                this._dialogPanel.close();
+            }
+        },
+        /**
+         * copy icerapi scripts to home directory
+         * Note: icerapi cannot excute in long directory prefix
+         */
+        copyScripts: function() {
+            let icerapiProgram = '/home/icerapi/icerapi';
+            if (!GREUtils.File.exists(icerapiProgram)) {
+                try {
+                    GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
+                } catch (e) {
+                    this.log('ERROR', e);
+                }
+            }
+
+            if (!GREUtils.File.exists(icerapiProgram)) {
+                alert(_('Install EasyCard library failed, please contact technical support.'));
             }
         },
 
@@ -341,6 +362,16 @@
 
             return alertWin;
 
+        },
+        /**
+         * set dialog caption
+         * @param {String} caption
+         */
+        _setCaption: function(caption)
+        {
+            if (this._dialogPanel) {
+                this._dialogPanel.document.getElementById('dialog-caption').textContent = caption;
+            }
         },
         /**
          * show wait panel

@@ -7,7 +7,7 @@ var EDCResponse = {
     KEY_REFERENCE_NUM: "T3700",
     KEY_ERROR_MSG: "ErrMsg",
 
-    CODE_SUCCESS: "0000",
+    CODE_SUCCESS: "0",
 
     /**
      * return the result entity
