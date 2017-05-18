@@ -167,53 +167,34 @@
         },
 
         easycardQuery: function() {
-            let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
-            let currentTransaction = cart._getTransaction();
-            let total = currentTransaction != null ? currentTransaction.getTotal() : 0;
-            let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
-            let serialNum = this._getSerialNum();
-            let hostSerialNum = this._getHostSerialNum();
-            if (!transactionSeq) {
-                NotifyUtils.info(_('data_error'));
-                evt.preventDefault();
-                return;
-            }
-
             $.blockUI({
                 "message": '<h3>' + _('screen_lock') + '</h3>'
             });
             let waitPanel = this._showWaitPanel(_('show_progress'));
 
             try {
-                let request = this.newICERAPIRequest().queryRequest(total, serialNum, hostSerialNum, transactionSeq);
+                let serialNum = this._getSerialNum();
+                let hostSerialNum = this._getHostSerialNum();
+                let icerAPIRequest = new ICERAPIRequest();
+                let request = icerAPIRequest.queryRequest(serialNum, hostSerialNum);
                 let result = this._callICERAPI(request);
                 if (!result) {
                     this._setWaitCaption(_('transaction_fail'));
-                    this.sleep(4000);
-                } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
-                    this.sleep(4000);
-                } else {
-                    this._setWaitCaption(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
                     this.sleep(3000);
+                } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+                    this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
+                    this.sleep(3000);
+                } else {
+                    let balance = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_BALANCE]);
+                    this._setWaitCaption(_('The balance of the easycard is %S', [balance]));
+                    this.sleep(2000);
                 }
-            } catch (e) {} finally {
+            } catch (e) {
+                this.log('ERROR', this.dump(e));
+            } finally {
                 waitPanel.hidePopup();
                 $.unblockUI();
             }
-        },
-        /**
-         * get the current card balance
-         * @return {Number} balance
-         */
-        easycardBalance: function() {
-            let serialNum = this._getSerialNum();
-            let hostSerialNum = this._getHostSerialNum();
-            let request = this.newICERAPIRequest().balanceRequest(serialNum, hostSerialNum);
-            let result = this._callICERAPI(request);
-            let balance = result[ICERAPIResponse.KEY_BALANCE];
-            if (balance != null) return parseInt(balance);
-            return -1;
         },
         /**
          * ICERAPI settlement
@@ -250,12 +231,12 @@
          * @return {Boolean}
          */
         easycardSignOn: function() {
-            const ICERAPIRequest = new ICERAPIRequest();
             let serialNum = this._getSerialNum();
             let hostSerialNum = this._getHostSerialNum();
-            let request = this.newICERAPIRequest('System').signonRequest(serialNum, hostSerialNum);
+            let icerAPIRequest = new ICERAPIRequest();
+            let request = icerAPIRequest.signonRequest(serialNum, hostSerialNum);
             let result = this._callICERAPI(request);
-            if (!result || result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+            if (!result || result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
                 NotifyUtils.info(_('signon_fail'));
                 return false;
             }
