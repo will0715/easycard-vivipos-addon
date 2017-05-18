@@ -34,12 +34,8 @@
                 this._cartController.addEventListener('beforeVoidSale', this.easycardCancel, this);
             }
 
-            if (GeckoJS.Controller.getInstanceByName('Keypad')) {
-                GeckoJS.Controller.getInstanceByName('Keypad').addEventListener('onEnterPress', this.easycardPayout, this);
-            }
-
             if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
-                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('shiftChanged', this.easycardSettlement, this);
+                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('periodClosed', this.easycardSettlement, this);
             }
 
             this.copyScripts();
