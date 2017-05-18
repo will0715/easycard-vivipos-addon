@@ -10,6 +10,8 @@
         include('chrome://easycard_payment/content/easycard/ICERAPIResponse.js');
     }
 
+    include('chrome://easycard_payment/content/libs/xml2json.min.js');
+
     var mainWindow = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("Vivipos:Main");
 
     const __controller__ = {
@@ -19,13 +21,11 @@
         _sequenceKey: 'easycardSeq',
         _hostSequenceKey: 'easycardHostSeq',
         _cartController: null,
+        _icerAPIPath: '/home/icerapi/',
+        _icerAPIScript: "callicerapi.sh",
         _scriptPath: "/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/",
-        _scriptFile: "callicerapi.sh",
-        _inFile: "in.data",
-        _outputFile: "out.data",
-        _tmId: null,
-        _isSandbox: false,
-        _signOnExpiredTime: 40 * 60 * 1000,
+        _inFile: "/tmp/icerapi_in.data",
+        _outputFile: "/tmp/icerapi_out.data",
         _dialogPanel: null,
 
         initial: function() {
@@ -59,7 +59,7 @@
          * Note: icerapi cannot excute in long directory prefix
          */
         copyScripts: function() {
-            let icerapiProgram = '/home/icerapi/icerapi';
+            let icerapiProgram = this._icerAPIPath+'icerapi';
             if (!GREUtils.File.exists(icerapiProgram)) {
                 try {
                     GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
@@ -263,22 +263,34 @@
             return true;
         },
         /**
-         * call bridge script to communicate with easycardEDC
+         * call bridge script to communicate with ICERAPI
          * @param {String} request
          * @return {Object | null}
          */
-        _callEasycardEDC: function(request) {
+        _callICERAPI: function(request) {
+            let result = null;
             this._writeInFile(request);
             try {
-                this.log("DEBUG", "callEasycardEDC:::");
-                GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 30s ' + this._scriptPath + this._scriptFile], true);
-                var responseJSON = JSON.parse(GREUtils.File.readAllLine(this._scriptPath + this._outputFile));
-                var response = ICERAPIResponse.parseResponse(responseJSON);
-                return response;
+                this.log("DEBUG", "callICERAPI:::");
+                GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 10s ' + this._icerAPIPath + this._icerAPIScript], true);
+                if (GREUtils.File.exists(this._outputFile)) {
+                    let icerapiRESXML = GREUtils.Charset.convertToUnicode(GREUtils.File.readAllBytes(this._outputFile), 'UTF-8');
+                    let x2js = new X2JS();
+                    try {
+                        icerapiRESJSON = x2js.xml_str2json(icerapiRESXML);
+                        result = ICERAPIResponse.parseResponse(icerapiRESJSON);
+                        //set host serial number if tag exists
+                        if (typeof result[ICERAPIResponse.KEY_HOST_SERIAL_NUM] != 'undefined') {
+                            this._setHostSerialNum(result[ICERAPIResponse.KEY_HOST_SERIAL_NUM]);
+                        }
+                    } catch(e) {
+                        this.log('DEBUG', e.message);
+                    }
+                }
             } catch (e) {
-                GeckoJS.BaseObject.log('ERROR', _('Failed to call easycardEDC (%S), request data: [%S].', [e, request]));
+                GeckoJS.BaseObject.log('ERROR', _('Failed to call ICERAPI (%S), request data: [%S].', [e, request]));
             }
-            return null;
+            return result;
         },
         /**
          * get new serial number
@@ -308,7 +320,7 @@
          * @return {String}
          */
         _writeInFile: function(request) {
-            let writeInFile = new GeckoJS.File(this._scriptPath + this._inFile, true);
+            let writeInFile = new GeckoJS.File(this._inFile, true);
             writeInFile.open("vivi");
             writeInFile.write(request);
             writeInFile.close();
