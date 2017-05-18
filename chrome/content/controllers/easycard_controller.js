@@ -96,13 +96,13 @@
                 let request = this.newICERAPIRequest().payoutRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
                 let result = this._callICERAPI(request);
                 if (!result) {
-                    this._setWaitCaption(_('transaction_fail'));
+                    this._setWaitDescription(_('transaction_fail'));
                     this.sleep(4000);
-                } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
+                } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+                    this._setWaitDescription(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
                     this.sleep(4000);
                 } else {
-                    this._setWaitCaption(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                    this._setWaitDescription(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
                     cart._addPayment('easycard', result[ICERAPIResponse.KEY_TXN_AMOUNT], null, 'easycard', result[ICERAPIResponse.KEY_REFERENCE_NUM], false, false);
                     this.sleep(3000);
                 }
@@ -139,15 +139,15 @@
                         let request = this.newICERAPIRequest().cancelRequest(orderPayments[i].amount, serialNum, hostSerialNum, transactionSeq);
                         let result = this._callICERAPI(request);
                         if (!result || (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || orderPayments[i].amount != result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
-                            this._setWaitCaption(_('cancel_fail'));
+                            this._setWaitDescription(_('cancel_fail'));
                             this.sleep(4000);
                             evt.preventDefault();
-                        } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                            this._setWaitCaption(_('cancel_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
+                        } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+                            this._setWaitDescription(_('cancel_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
                             this.sleep(4000);
                             evt.preventDefault();
                         } else {
-                            this._setWaitCaption(_('cancel_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                            this._setWaitDescription(_('cancel_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
                             this.sleep(3000);
                         }
                     }
@@ -175,14 +175,14 @@
                 let request = icerAPIRequest.queryRequest(serialNum, hostSerialNum);
                 let result = this._callICERAPI(request);
                 if (!result) {
-                    this._setWaitCaption(_('transaction_fail'));
+                    this._setWaitDescription(_('transaction_fail'));
                     this.sleep(3000);
                 } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
+                    this._setWaitDescription(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
                     this.sleep(3000);
                 } else {
                     let balance = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_BALANCE]);
-                    this._setWaitCaption(_('The balance of the easycard is %S', [balance]));
+                    this._setWaitDescription(_('The balance of the easycard is %S', [balance]));
                     this.sleep(2000);
                 }
             } catch (e) {
@@ -331,7 +331,7 @@
             let alertWin = GREUtils.Dialog.openWindow(win, aURL, aName,
                 aFeatures, aArguments);
 
-            this.sleep(1000);
+            this.sleep(500);
 
             return alertWin;
 
@@ -348,29 +348,29 @@
         },
         /**
          * show wait panel
-         * @param {Object} caption
+         *
+         * @param {String} description
          */
-        _showWaitPanel: function(title) {
+        _showWaitPanel: function(description) {
 
-            let waitPanel = document.getElementById('wait_panel');
-            let waitCaption = document.getElementById('wait_caption');
-            let progressbar = document.getElementById('progress');
+            let waitPanel = document.getElementById('linebreak_waiting_panel');
+            let waitDesc = document.getElementById('linebreak_waiting_description');
 
-            if (waitCaption) waitCaption.setAttribute("label", title);
+            if (waitDesc) waitDesc.textContent = description;
 
-            progressbar.setAttribute('hidden', true);
-            waitPanel.openPopupAtScreen(0, 0);
+            if (waitPanel) waitPanel.openPopupAtScreen(0, 0);
 
-            this.sleep(1000);
+            this.sleep(500);
             return waitPanel;
 
         },
         /**
-         * set wait caption
-         * @param {String} caption
+         * set wait description.
+         *
+         * @param {String}
          */
-        _setWaitCaption: function(title) {
-            document.getElementById('wait_caption').setAttribute('label', title);
+        _setWaitDescription: function(description) {
+            document.getElementById('linebreak_waiting_description').textContent = description;
         }
     };
 
