@@ -1,4 +1,5 @@
 var ICERAPIRequest = function() {
+    this.TXN_AMT_UNIT = 100; //amount accurate to the second decimal place without decimal mark, ex. 10.01 -> 1001(10.01*100)
 };
 
 ICERAPIRequest.prototype = {
@@ -7,13 +8,12 @@ ICERAPIRequest.prototype = {
         "signon": "881999",
         "payout": "606100",
         "cancel": "620061",
-        "query": "216000",
-        "balance": "296000",
+        "query": "296000",
         "settlement": "900099"
     },
 
     MESSAGE_TYPE: {
-        "request": "0100",
+        "request": "0200",
         "settlement": "0500",
         "signon": "0800"
     },
@@ -26,7 +26,7 @@ ICERAPIRequest.prototype = {
      * @return {String} xml
      */
     payoutRequest: function(amount, serialNum, hostSerialNum, transactionSeq) {
-        let requestBody = "<T0400>" + amount + "</T0400>";
+        let requestBody = "<T0400>" + this.calAmount(amount) + "</T0400>";
         requestBody += "<T1100>" + serialNum + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T3701>" + transactionSeq + "</T3701>";
@@ -41,7 +41,7 @@ ICERAPIRequest.prototype = {
      * @return {String} xml
      */
     cancelRequest: function(amount, serialNum, hostSerialNum, transactionSeq) {
-        let requestBody = "<T0400>" + amount + "</T0400>";
+        let requestBody = "<T0400>" + this.calAmount(amount) + "</T0400>";
         requestBody += "<T1100>" + serialNum + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T3701>" + transactionSeq + "</T3701>";
@@ -49,27 +49,15 @@ ICERAPIRequest.prototype = {
     },
     /**
      * get the query's request xml string
-     * @param {Integer} amount
      * @param {String} serialNum
      * @param {String} HOST serialNum
      * @return {String} xml
      */
-    queryRequest: function(amount, serialNum, hostSerialNum) {
-        let requestBody = "<T0400>" + amount + "</T0400>";
+    queryRequest: function(serialNum, hostSerialNum) {
+        let requestBody = "<T0400>000</T0400>";
         requestBody += "<T1100>" + serialNum + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.query, requestBody);
-    },
-    /**
-     * get the balance's request xml string
-     * @param {String} serialNum
-     * @param {String} HOST serialNum
-     * @return {String} xml
-     */
-    balanceRequest: function(serialNum, hostSerialNum) {
-        let requestBody = "<T1100>" + serialNum + "</T1100>";
-        requestBody += "<T1101>" + hostSerialNum + "</T1101>";
-        return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.balance, requestBody);
     },
     /**
      * get the settlement's request xml string
@@ -92,6 +80,14 @@ ICERAPIRequest.prototype = {
         let requestBody = "<T1100>" + serialNum + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         return this._buildRequestXml(this.MESSAGE_TYPE.signon, this.PROCESS_CODE.signon, requestBody);
+    },
+    /**
+     * calculate amount to icerapi amount
+     * @param {Number} transaction amount
+     * @return {Number} calculated amount
+     */
+    calAmount: function(amount) {
+        return amount*this.TXN_AMT_UNIT;
     },
     /**
      * build the request xml string

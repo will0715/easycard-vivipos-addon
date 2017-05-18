@@ -7,8 +7,11 @@ var ICERAPIResponse = {
     KEY_RESPONSE_CODE: "T3900",
     KEY_RETURN_CODE: "T3901",
     KEY_REFERENCE_NUM: "T3700",
+    KEY_HOST_SERIAL_NUM: "T1101",
 
     CODE_SUCCESS: "0",
+
+    TXN_AMT_UNIT: 100,
 
     /**
      * return the result entity
@@ -17,6 +20,14 @@ var ICERAPIResponse = {
      */
     parseResponse: function(responseJSON) {
         return (typeof responseJSON != "undefined" && typeof responseJSON.TransXML != 'undefined' && typeof responseJSON.TransXML.TRANS != 'undefined') ? responseJSON.TransXML.TRANS : null;
+    },
+    /**
+     * calculate icerapi amount to real amount
+     * @param {Number} icerapi amount
+     * @return {Number} calculated amount
+     */
+    calAmount: function(icerapiAmount) {
+        return parseFloat(icerapiAmount/this.TXN_AMT_UNIT); //amount accurate to the second decimal place without decimal mark, ex. 1001 -> 10.01(1001/100)
     }
 
 };
