@@ -17,6 +17,7 @@
         name: 'EasycardPayment',
         components: ['Acl'],
         _sequenceKey: 'easycardSeq',
+        _hostSequenceKey: 'easycardHostSeq',
         _cartController: null,
         _scriptPath: "/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/",
         _scriptFile: "callicerapi.sh",
@@ -46,8 +47,7 @@
             //startup sign on to get machine ready.
             this._dialogPanel = this._showDialog(_('signon_process'));
             try {
-                let sequence = this._getSequence();
-                this._easycardSignOn(sequence);
+                this.easycardSignOn();
             } catch (e) {
                 this.log('DEBUG', e.message);
             } finally {
@@ -78,7 +78,8 @@
             let currentTransaction = cart._getTransaction();
             let remainTotal = currentTransaction != null ? currentTransaction.getRemainTotal() : 0;
             let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
-            let sequence = this._getSequence();
+            let serialNum = this._getSerialNum();
+            let hostSerialNum = this._getHostSerialNum();
             if (remainTotal <= 0) {
                 NotifyUtils.info(_('confirm_amount'));
                 evt.preventDefault();
@@ -96,20 +97,18 @@
             let waitPanel = this._showWaitPanel(_('show_progress'));
 
             try {
-                if (this._easycardSignOn(sequence)) {
-                    let request = this.newICERAPIRequest().payoutRequest(remainTotal, sequence, transactionSeq);
-                    let result = this._callEasycardEDC(request);
-                    if (!result) {
-                        this._setWaitCaption(_('transaction_fail'));
-                        this.sleep(4000);
-                    } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                        this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
-                        this.sleep(4000);
-                    } else {
-                        this._setWaitCaption(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
-                        cart._addPayment('easycard', result[ICERAPIResponse.KEY_TXN_AMOUNT], null, 'easycard', result[ICERAPIResponse.KEY_REFERENCE_NUM], false, false);
-                        this.sleep(3000);
-                    }
+                let request = this.newICERAPIRequest().payoutRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
+                let result = this._callICERAPI(request);
+                if (!result) {
+                    this._setWaitCaption(_('transaction_fail'));
+                    this.sleep(4000);
+                } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+                    this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
+                    this.sleep(4000);
+                } else {
+                    this._setWaitCaption(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                    cart._addPayment('easycard', result[ICERAPIResponse.KEY_TXN_AMOUNT], null, 'easycard', result[ICERAPIResponse.KEY_REFERENCE_NUM], false, false);
+                    this.sleep(3000);
                 }
             } catch (e) {} finally {
                 waitPanel.hidePopup();
@@ -121,7 +120,8 @@
             let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
             let currentTransaction = cart._getTransaction();
             let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
-            let sequence = this._getSequence();
+            let serialNum = this._getSerialNum();
+            let hostSerialNum = this._getHostSerialNum();
             if (!transactionSeq) {
                 NotifyUtils.info(_('data_error'));
                 evt.preventDefault();
@@ -140,21 +140,19 @@
                         });
                         waitPanel = this._showWaitPanel(_('show_progress'));
 
-                        if (this._easycardSignOn(sequence)) {
-                            let request = this.newICERAPIRequest().cancelRequest(orderPayments[i].amount, sequence, transactionSeq);
-                            let result = this._callEasycardEDC(request);
-                            if (!result || (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || orderPayments[i].amount != result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
-                                this._setWaitCaption(_('cancel_fail'));
-                                this.sleep(4000);
-                                evt.preventDefault();
-                            } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                                this._setWaitCaption(_('cancel_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
-                                this.sleep(4000);
-                                evt.preventDefault();
-                            } else {
-                                this._setWaitCaption(_('cancel_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
-                                this.sleep(3000);
-                            }
+                        let request = this.newICERAPIRequest().cancelRequest(orderPayments[i].amount, serialNum, hostSerialNum, transactionSeq);
+                        let result = this._callICERAPI(request);
+                        if (!result || (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || orderPayments[i].amount != result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
+                            this._setWaitCaption(_('cancel_fail'));
+                            this.sleep(4000);
+                            evt.preventDefault();
+                        } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+                            this._setWaitCaption(_('cancel_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
+                            this.sleep(4000);
+                            evt.preventDefault();
+                        } else {
+                            this._setWaitCaption(_('cancel_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                            this.sleep(3000);
                         }
                     }
                 }
@@ -173,7 +171,8 @@
             let currentTransaction = cart._getTransaction();
             let total = currentTransaction != null ? currentTransaction.getTotal() : 0;
             let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
-            let sequence = this._getSequence();
+            let serialNum = this._getSerialNum();
+            let hostSerialNum = this._getHostSerialNum();
             if (!transactionSeq) {
                 NotifyUtils.info(_('data_error'));
                 evt.preventDefault();
@@ -186,19 +185,17 @@
             let waitPanel = this._showWaitPanel(_('show_progress'));
 
             try {
-                if (this._easycardSignOn(sequence)) {
-                    let request = this.newICERAPIRequest().queryRequest(total, sequence, transactionSeq);
-                    let result = this._callEasycardEDC(request);
-                    if (!result) {
-                        this._setWaitCaption(_('transaction_fail'));
-                        this.sleep(4000);
-                    } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                        this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
-                        this.sleep(4000);
-                    } else {
-                        this._setWaitCaption(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
-                        this.sleep(3000);
-                    }
+                let request = this.newICERAPIRequest().queryRequest(total, serialNum, hostSerialNum, transactionSeq);
+                let result = this._callICERAPI(request);
+                if (!result) {
+                    this._setWaitCaption(_('transaction_fail'));
+                    this.sleep(4000);
+                } else if (result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+                    this._setWaitCaption(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
+                    this.sleep(4000);
+                } else {
+                    this._setWaitCaption(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                    this.sleep(3000);
                 }
             } catch (e) {} finally {
                 waitPanel.hidePopup();
@@ -210,32 +207,34 @@
          * @return {Number} balance
          */
         easycardBalance: function() {
-            let request = this.newICERAPIRequest().balanceRequest();
-            let result = this._callEasycardEDC(request);
+            let serialNum = this._getSerialNum();
+            let hostSerialNum = this._getHostSerialNum();
+            let request = this.newICERAPIRequest().balanceRequest(serialNum, hostSerialNum);
+            let result = this._callICERAPI(request);
             let balance = result[ICERAPIResponse.KEY_BALANCE];
             if (balance != null) return parseInt(balance);
             return -1;
         },
         /**
-         * easycardEDC settlement
+         * ICERAPI settlement
          */
         easycardSettlement: function(evt) {
-            //reset sequence every settlement
-            SequenceModel.resetLocalSequence(this._sequenceKey, 1);
 
             if (GREUtils.Dialog.confirm(this.topmostWindow, _('settlement_confirm'),
                     _('settlement_confirm_str')
                 )) {
 
                 try {
-                    let sequence = this._getSequence();
-                    if (this._easycardSignOn(sequence)) {
-                        let request = this.newICERAPIRequest().settlementRequest(sequence);
-                        let result = this._callEasycardEDC(request);
-                        if (result[ICERAPIResponse.KEY_RESPONSE_CODE] == ICERAPIResponse.CODE_SUCCESS) {
-                            alert(_('settlement_success'));
-                            return;
-                        }
+                    let serialNum = this._getSerialNum();
+                    let hostSerialNum = this._getHostSerialNum();
+                    let request = this.newICERAPIRequest().settlementRequest(serialNum, hostSerialNum);
+                    let result = this._callICERAPI(request);
+                    if (result[ICERAPIResponse.KEY_RESPONSE_CODE] == ICERAPIResponse.CODE_SUCCESS) {
+                        //reset sequence every settlement
+                        SequenceModel.resetLocalSequence(this._sequenceKey, 0);
+                        SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
+                        alert(_('settlement_success'));
+                        return;
                     }
                     alert(_('settlement_fail'));
                     evt.preventDefault();
@@ -247,31 +246,19 @@
         },
         /**
          * Easycard Sign On Function
-         * must do while communicating with easycardEDC
-         * @param {Number} sequence
-         * @return {Object | null}
+         * must do before communicating with ICERAPI
+         * @return {Boolean}
          */
-        _easycardSignOn: function(sequence) {
-            if (GeckoJS.Session.get('easycardEDCSignOn') != null && (new Date().getTime() - GeckoJS.Session.get('easycardEDCSignOn') <= this._signOnExpiredTime)) {
-                return GeckoJS.Session.get('easycardEDCSignOn');
-            }
-            if (!this._signOnPwd) {
-                let comport = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.comport');
-                let signOnPwd = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.signOnPwd');
-                if (!comport || !signOnPwd || comport == "" || signOnPwd == "") {
-                    NotifyUtils.info(_('setting_missing'));
-                    return false;
-                }
-                this._signOnPwd = signOnPwd;
-            }
-            const ICERAPIRequest = new ICERAPIRequest(this._tmId, 'System');
-            let request = this.newICERAPIRequest('System').signonRequest(sequence, this._signOnPwd);
-            let result = this._callEasycardEDC(request);
+        easycardSignOn: function() {
+            const ICERAPIRequest = new ICERAPIRequest();
+            let serialNum = this._getSerialNum();
+            let hostSerialNum = this._getHostSerialNum();
+            let request = this.newICERAPIRequest('System').signonRequest(serialNum, hostSerialNum);
+            let result = this._callICERAPI(request);
             if (!result || result[ICERAPIResponse.KEY_RESPONSE_CODE] != ICERAPIResponse.CODE_SUCCESS) {
                 NotifyUtils.info(_('signon_fail'));
                 return false;
             }
-            GeckoJS.Session.set('easycardEDCSignOn', new Date().getTime());
             this.sleep(1000);
             return true;
         },
@@ -294,30 +281,27 @@
             return null;
         },
         /**
-         * get new ICERAPIRequest instance
-         * @param {String} agentNum
-         * @return {ICERAPIRequest}
-         */
-        newICERAPIRequest: function(agentNum) {
-            let tmId = GeckoJS.Session.get('terminal_no');
-            let tmAgentNum = agentNum;
-            let clerk = this.Acl.getUserPrincipal();
-            if (clerk && typeof agentNum === 'undefined') {
-                tmAgentNum = clerk.username;
-            }
-            if (this._isSandbox) {
-                this.log('DEBUG', tmAgentNum);
-                return new ICERAPIRequest("00", "1234");
-            }
-            return new ICERAPIRequest(tmId, tmAgentNum);
-        },
-        /**
-         * get new sequence
+         * get new serial number
          * @return {String}
          */
-        _getSequence: function() {
+        _getSerialNum: function() {
             let sequenceNo = SequenceModel.getLocalSequence(this._sequenceKey);
             return GeckoJS.String.padLeft(sequenceNo, 6, "0");
+        },
+        /**
+         * get host serial number
+         * @return {String}
+         */
+        _getHostSerialNum: function() {
+            let sequenceNo = SequenceModel.getLocalSequence(this._hostSequenceKey);
+            return GeckoJS.String.padLeft(sequenceNo, 6, "0");
+        },
+        /**
+         * set host serial number
+         * @return {String}
+         */
+        _setHostSerialNum: function(currentHostSerialNum) {
+            SequenceModel.resetLocalSequence(this._hostSequenceKey, currentHostSerialNum);
         },
         /**
          * write request to temp file.
@@ -408,7 +392,7 @@
         let main = GeckoJS.Controller.getInstanceByName('Main');
         if (main) {
             main.addEventListener('afterInitial', function() {
-                main.requestCommand('initial', null, 'EasycardPayment'); // viviconnect etl
+                main.requestCommand('initial', null, 'EasycardPayment');
             });
         }
 
