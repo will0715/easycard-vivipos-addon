@@ -6,10 +6,12 @@ var ICERAPIResponse = {
     KEY_BALANCE: "T0410",
     KEY_RESPONSE_CODE: "T3900",
     KEY_RETURN_CODE: "T3901",
+    KEY_READER_RESPONSE_CODE: "3904",
     KEY_REFERENCE_NUM: "T3700",
     KEY_HOST_SERIAL_NUM: "T1101",
 
     CODE_SUCCESS: "0",
+    CODE_RETRY: "-125",
 
     TXN_AMT_UNIT: 100,
 
@@ -28,6 +30,14 @@ var ICERAPIResponse = {
      */
     calAmount: function(icerapiAmount) {
         return parseFloat(icerapiAmount/this.TXN_AMT_UNIT); //amount accurate to the second decimal place without decimal mark, ex. 1001 -> 10.01(1001/100)
+    },
+    /**
+     * check whether the response need to retry or not
+     * @param {Object} response
+     * @return {Object | null}
+     */
+    isRetryRequired: function(response) {
+        return (response[this.KEY_RETURN_CODE] == this.CODE_RETRY || (response[this.KEY_RETURN_CODE] == "-119" && response[this.KEY_READER_RESPONSE_CODE].indexOf("62") == 0)) ? true : false;
     }
 
 };

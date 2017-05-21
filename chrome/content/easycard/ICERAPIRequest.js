@@ -6,7 +6,7 @@ ICERAPIRequest.prototype = {
 
     PROCESS_CODE: {
         "signon": "881999",
-        "payout": "606100",
+        "deduct": "606100",
         "cancel": "620061",
         "query": "296000",
         "settlement": "900099"
@@ -18,19 +18,19 @@ ICERAPIRequest.prototype = {
         "signon": "0800"
     },
     /**
-     * get the payout's request xml string
+     * get the deduct's request xml string
      * @param {Integer} amount
      * @param {String} serialNum
      * @param {String} HOST serialNum
      * @param {String} transactionSeq
      * @return {String} xml
      */
-    payoutRequest: function(amount, serialNum, hostSerialNum, transactionSeq) {
+    deductRequest: function(amount, serialNum, hostSerialNum, transactionSeq) {
         let requestBody = "<T0400>" + this.calAmount(amount) + "</T0400>";
         requestBody += "<T1100>" + serialNum + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T3701>" + transactionSeq + "</T3701>";
-        return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.payout, requestBody);
+        return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.deduct, requestBody);
     },
     /**
      * get the cancel's request xml string

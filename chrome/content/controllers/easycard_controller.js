@@ -75,7 +75,7 @@
             }
         },
 
-        easycardPayout: function(evt) {
+        easycardDeduct: function() {
             let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
             let currentTransaction = cart._getTransaction();
             let remainTotal = currentTransaction != null ? currentTransaction.getRemainTotal() : 0;
@@ -83,39 +83,73 @@
             let serialNum = this._getSerialNum();
             let hostSerialNum = this._getHostSerialNum();
             if (remainTotal <= 0) {
-                NotifyUtils.info(_('confirm_amount'));
-                evt.preventDefault();
+                NotifyUtils.info(_('Transaction amount is lower than 0, please check amount'));
                 return;
             }
             if (!transactionSeq) {
-                NotifyUtils.info(_('data_error'));
-                evt.preventDefault();
+                NotifyUtils.info(_('Data error, please contact technical support'));
                 return;
             }
 
             $.blockUI({
-                "message": '<h3>' + _('screen_lock') + '</h3>'
+                "message": '<h3>' + _('Screen Lock') + '</h3>'
             });
-            let waitPanel = this._showWaitPanel(_('show_progress'));
+            let waitPanel = this._showWaitPanel(_('Transaction in progress'));
 
             try {
-                let request = this.newICERAPIRequest().payoutRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
-                let result = this._callICERAPI(request);
+                let result = this.processDeduct(remainTotal, serialNum, hostSerialNum, transactionSeq);
+
                 if (!result) {
-                    this._setWaitDescription(_('transaction_fail'));
-                    this.sleep(4000);
+                    this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
+                    this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitDescription(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
-                    this.sleep(4000);
-                } else {
-                    this._setWaitDescription(_('transaction_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                    this._setWaitDescription(_('Transaction failed, cannot pay with easycard') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
+                    this.sleep(2000);
+                } else if (result[ICERAPIResponse.KEY_TXN_AMOUNT] > 0) {
+                    this._setWaitDescription(_('Transaction success, please see details below', [result[ICERAPIResponse.KEY_TXN_AMOUNT], result[ICERAPIResponse.KEY_BALANCE]]));
                     cart._addPayment('easycard', result[ICERAPIResponse.KEY_TXN_AMOUNT], null, 'easycard', result[ICERAPIResponse.KEY_REFERENCE_NUM], false, false);
-                    this.sleep(3000);
+                    this.sleep(2000);
+                } else {
+                    this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
+                    this.sleep(2000);
                 }
-            } catch (e) {} finally {
+            } catch (e) {
+                this.log('ERROR', e);
+            } finally {
                 waitPanel.hidePopup();
                 $.unblockUI();
             }
+        },
+        /**
+         * process the deduct payment
+         * @param {Integer} remaining total
+         * @param {String} serialNum
+         * @param {String} HOST serialNum
+         * @param {String} transactionSeq
+         * @return {Object|null}
+         */
+        processDeduct: function(remainTotal, serialNum, hostSerialNum, transactionSeq) {
+            let icerAPIRequest = new ICERAPIRequest();
+            let request = icerAPIRequest.deductRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
+            let result = this._callICERAPI(request);
+            //timeout or retry required
+            if (!result || ICERAPIResponse.isRetryRequired(result)) {
+                for (let retryAttempts = 0; retryAttempts < 3; retryAttempts++) {
+                    if (GREUtils.Dialog.confirm(this.topmostWindow, _('Retry payment'), _('Payment timeout, please check the device and easycard, press the OK button to retry payment'))) {
+                        request = icerAPIRequest.deductRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
+                        result = this._callICERAPI(request);
+                        //return normal result
+                        if (result && !ICERAPIResponse.isRetryRequired(result)) {
+                            return result;
+                        }
+                    } else {
+                        //cancel retry payment
+                        break;
+                    }
+                    this.sleep(1000);
+                }
+            }
+            return null;
         },
 
         easycardCancel: function(evt) {
@@ -192,7 +226,7 @@
                     this.sleep(2000);
                 }
             } catch (e) {
-                this.log('ERROR', this.dump(e));
+                this.log('ERROR', e);
             } finally {
                 waitPanel.hidePopup();
                 $.unblockUI();

@@ -1,5 +1,5 @@
 pref("vivipos.fec.registry.function.programmable.easycard_payment.access", "");
-pref("vivipos.fec.registry.function.programmable.easycard_payment.command", "easycardPayout");
+pref("vivipos.fec.registry.function.programmable.easycard_payment.command", "easycardDeduct");
 pref("vivipos.fec.registry.function.programmable.easycard_payment.controller", "EasycardPayment");
 pref("vivipos.fec.registry.function.programmable.easycard_payment.label", "悠遊卡付款");
 pref("vivipos.fec.registry.function.programmable.easycard_payment.name", "悠遊卡付款");
