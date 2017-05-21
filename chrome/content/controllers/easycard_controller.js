@@ -34,14 +34,20 @@
                 this._cartController.addEventListener('beforeVoidSale', this.easycardCancel, this);
             }
 
+
             if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
+                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('shiftChanged', function(evt) {
+                    if (evt.data.closing) {
+                        alert(_('Please keep easycard device connected during shift change'));
+                    }
                 GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('periodClosed', this.easycardSettlement, this);
+                }, this);
             }
 
             this.copyScripts();
 
             //startup sign on to get machine ready.
-            this._dialogPanel = this._showDialog(_('signon_process'));
+            this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
             try {
                 this.easycardSignOn();
             } catch (e) {
@@ -233,7 +239,8 @@
             let request = icerAPIRequest.signonRequest(serialNum, hostSerialNum);
             let result = this._callICERAPI(request);
             if (!result || result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                NotifyUtils.info(_('signon_fail'));
+                this._setCaption(_('Easycard sign on failed, please check the device is connected to the POS, and restart the POS'));
+                this.sleep(1500);
                 return false;
             }
             this.sleep(1000);
@@ -249,7 +256,7 @@
             this._writeInFile(request);
             try {
                 this.log("DEBUG", "callICERAPI:::");
-                GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 10s ' + this._icerAPIPath + this._icerAPIScript], true);
+                GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 30s ' + this._icerAPIPath + this._icerAPIScript], true);
                 if (GREUtils.File.exists(this._outputFile)) {
                     let icerapiRESXML = GREUtils.Charset.convertToUnicode(GREUtils.File.readAllBytes(this._outputFile), 'UTF-8');
                     let x2js = new X2JS();
