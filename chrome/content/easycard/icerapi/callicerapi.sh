@@ -25,7 +25,7 @@ if [ ! -z "$reqxml" -a "$reqxml" != " " ]; then
     #write request xml to icerapi request file
     echo ${reqxml} > ${icerapireq}
     #execute icerapi program
-    ./icerapi
+    LD_LIBRARY_PATH=${scriptpath} ${scriptpath}/icerapi
     #read response if response ok file exists
     if [ -f "$icerapiresok" ]; then
         #write response to output data file
