@@ -36,7 +36,6 @@
                 this._cartController.addEventListener('beforeVoidSale', this.easycardCancel, this);
             }
 
-
             if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
                 GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('shiftChanged', function(evt) {
                     if (evt.data.closing) {
@@ -271,30 +270,34 @@
          * ICERAPI settlement
          */
         easycardSettlement: function(evt) {
+            $.blockUI({
+                "message": '<h3>' + _('Screen Lock') + '</h3>',
+                css: { top: '37.5%' }
+            });
 
-            if (GREUtils.Dialog.confirm(this.topmostWindow, _('settlement_confirm'),
-                    _('settlement_confirm_str')
-                )) {
-
-                try {
-                    let serialNum = this._getSerialNum();
-                    let hostSerialNum = this._getHostSerialNum();
-                    let request = this.newICERAPIRequest().settlementRequest(serialNum, hostSerialNum);
-                    let result = this._callICERAPI(request);
-                    if (result[ICERAPIResponse.KEY_RESPONSE_CODE] == ICERAPIResponse.CODE_SUCCESS) {
-                        //reset sequence every settlement
-                        SequenceModel.resetLocalSequence(this._sequenceKey, 0);
-                        SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
-                        alert(_('settlement_success'));
-                        return;
-                    }
-                    alert(_('settlement_fail'));
-                    evt.preventDefault();
-                } catch (e) {
-                    this.log('ERROR', this.dump(e));
+            this._dialogPanel = this._showDialog(_('Easycard transaction log upload, check connection...'));
+            try {
+                let serialNum = this._getSerialNum();
+                let hostSerialNum = this._getHostSerialNum();
+                let icerAPIRequest = new ICERAPIRequest(this._getBatchNo());
+                let request = icerAPIRequest.settlementRequest(serialNum, hostSerialNum);
+                let result = this._callICERAPI(request);
+                if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_SUCCESS) {
+                    //reset sequence every settlement
+                    SequenceModel.resetLocalSequence(this._sequenceKey, 0);
+                    SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
+                    this._setCaption(_('Easycard transaction log upload success!'));
+                    this.sleep(1000);
+                    return;
                 }
+                this._setCaption(_('Easycard transaction log upload failed, please press the upload button at control panel'));
+                this.sleep(2000);
+            } catch (e) {
+                this.log('ERROR', e);
+            } finally {
+                $.unblockUI();
+                this._dialogPanel.close();
             }
-            evt.preventDefault();
         },
         /**
          * Easycard Sign On Function
