@@ -33,28 +33,24 @@
         <vbox id="ezposSettingsXUL" flex="1" class="container-be">
             <vbox flex="1" class="container-main">
 
-                            <caption label="&settings.title;"/>
+                            <caption label="&settings.title;" class="label-page-title"/>
 
                             <vbox id="basic-panel" orient="vertical" flex="1">
                                 <grid class="data-form-2">
                                     <columns>
                                         <column flex="1"/>
-                                        <column flex="2"/>
+                                        <column flex="1"/>
                                     </columns>
                                     <rows>
                                         <row>
                                             <vbox>
-                                                <label value="&settings.label.signOnPwd;"/>
-                                                <textbox value=""
-                                                         form="settingForm" name="signOnPwd"/>
-                                            </vbox>
-                                            <vbox>
                                                 <label value="&settings.label.comPort;"/>
+                                                <!--support com port : /dev/ttyS0, /dev/ttyS1, /dev/ttyS4 -->
                                                 <menulist id="com_port" form="settingForm" name="comport">
                                                     <menupopup id="com_port_menupopup">
-                                                        <menuitem selected="true" label="COM 1" value="0"/>
-                                                        <menuitem label="COM 2" value="1"/>
-                                                        <menuitem label="COM 5" value="4"/>
+                                                        <menuitem selected="true" label="COM 1" value="1"/>
+                                                        <menuitem label="COM 2" value="2"/>
+                                                        <menuitem label="COM 5" value="5"/>
                                                     </menupopup>
                                                 </menulist>
                                             </vbox>

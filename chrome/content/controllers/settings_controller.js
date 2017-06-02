@@ -7,8 +7,7 @@
     const __controller__ = {
 
         name: 'EasycardSettings',
-        _scriptPath: "/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/",
-        _settingFile: "setting.ini",
+        _icerAPIPath: '/home/icerapi/',
 
         // initial SyncSettings
         initial: function(warn) {
@@ -25,20 +24,18 @@
             return settings;
         },
 
+        writeSettings: function(settings) {
+            if (!settings) return false;
+            GeckoJS.Configure.write('vivipos.fec.settings.easycard_payment', settings);
 
-        writeSettings: function(setting) {
-            if (!setting) return false;
-            GeckoJS.Configure.write('vivipos.fec.settings.easycard_payment', setting);
-
-            let writeSettingFile = new GeckoJS.File(this._scriptPath + this._settingFile, true);
-            settingParams = setting.comport;
-            writeSettingFile.open("vivi");
-            writeSettingFile.write(settingParams);
-            writeSettingFile.close();
+            try {
+                GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 5s ' + this._icerAPIPath + 'setcomport.sh' + ' ' + settings.comport], true);
+            } catch(e) {
+                this.log('ERROR', e);
+            }
 
             return true;
         },
-
 
         isAlphaNumeric: function(str) {
             let nonalphaRE = /[^a-zA-Z0-9]/;
@@ -77,7 +74,7 @@
                     return false;
                 }
             } else {
-                NotifyUtils.warn(_('setting_not_saved'));
+                NotifyUtils.warn(_('Sorry, your changes could not be saved'));
             }
 
             return !data.cancel;
@@ -89,9 +86,9 @@
             this.Form.unserializeFromObject('settingForm', obj);
             let result = this.writeSettings(obj);
             if (result) {
-                OsdUtils.info(_('setting_saved'));
+                OsdUtils.info(_('Your changes have been saved'));
             } else {
-                NotifyUtils.warn(_('setting_not_saved'));
+                NotifyUtils.warn(_('Sorry, your changes could not be saved'));
             }
         },
 
@@ -106,9 +103,9 @@
                     prompts.BUTTON_POS_2 * prompts.BUTTON_TITLE_IS_STRING;
 
                 let action = prompts.confirmEx(this.topmostWindow,
-                    _('setting_exit'),
-                    _('setting_exit_ask'),
-                    flags, _('setting_save'), '', _('setting_descard'), null, check);
+                    _('Setting Confirmation'),
+                    _('Save your changes before exit?'),
+                    flags, _('Save'), '', _('Discard'), null, check);
                 if (action == 1) {
                     return;
                 } else if (action == 0) {
