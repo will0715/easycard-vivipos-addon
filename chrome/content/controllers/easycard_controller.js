@@ -18,6 +18,7 @@
 
         name: 'EasycardPayment',
         components: ['Acl'],
+        uses: ['ShiftMarker'],
         _sequenceKey: 'easycardSeq',
         _hostSequenceKey: 'easycardHostSeq',
         _cartController: null,
@@ -129,7 +130,7 @@
          * @return {Object|null}
          */
         processDeduct: function(remainTotal, serialNum, hostSerialNum, transactionSeq) {
-            let icerAPIRequest = new ICERAPIRequest();
+            let icerAPIRequest = new ICERAPIRequest(this._getBatchNo());
             let request = icerAPIRequest.deductRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
             let result = this._callICERAPI(request);
             //timeout or retry required
@@ -412,6 +413,17 @@
          */
         _setWaitDescription: function(description) {
             document.getElementById('linebreak_waiting_description').textContent = description;
+        },
+
+        _getBatchNo: function() {
+            let shiftChanges = GeckoJS.Controller.getInstanceByName('ShiftChanges');
+            let shiftMarker = shiftChanges._getShiftMarker();
+            if (shiftMarker) {
+                let batchNo = '';
+                batchNo = (new Date(shiftMarker.sale_period * 1000)).toString('yyMMdd') + GeckoJS.String.padLeft(shiftMarker.shift_number, 2, "0")
+                return batchNo;
+            }
+            return null;
         }
     };
 

@@ -1,5 +1,6 @@
-var ICERAPIRequest = function() {
+var ICERAPIRequest = function(batchNo) {
     this.TXN_AMT_UNIT = 100; //amount accurate to the second decimal place without decimal mark, ex. 10.01 -> 1001(10.01*100)
+    this.batchNo = batchNo;
 };
 
 ICERAPIRequest.prototype = {
@@ -7,7 +8,8 @@ ICERAPIRequest.prototype = {
     PROCESS_CODE: {
         "signon": "881999",
         "deduct": "606100",
-        "cancel": "620061",
+        "cancel": "816100",
+        "refund": "620061",
         "query": "296000",
         "settlement": "900099"
     },
@@ -31,6 +33,21 @@ ICERAPIRequest.prototype = {
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T3701>" + transactionSeq + "</T3701>";
         return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.deduct, requestBody);
+    },
+    /**
+     * get the refund's request xml string
+     * @param {Integer} amount
+     * @param {String} serialNum
+     * @param {String} HOST serialNum
+     * @param {String} transactionSeq
+     * @return {String} xml
+     */
+    refundRequest: function(amount, serialNum, hostSerialNum, transactionSeq) {
+        let requestBody = "<T0400>" + this.calAmount(amount) + "</T0400>";
+        requestBody += "<T1100>" + serialNum + "</T1100>";
+        requestBody += "<T1101>" + hostSerialNum + "</T1101>";
+        requestBody += "<T3701>" + transactionSeq + "</T3701>";
+        return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.refund, requestBody);
     },
     /**
      * get the cancel's request xml string
@@ -101,6 +118,9 @@ ICERAPIRequest.prototype = {
         request += "<T0100>" + messageType + "</T0100>";
         request += "<T0300>" + processCode + "</T0300>";
         if (typeof requestBody != "undefined") {
+            if (this.batchNo) {
+                requestBody += "<T5501>" + this.batchNo + "</T5501>";
+            }
             request += "<T1200>" + (new Date()).toString('HHmmss') + "</T1200>";
             request += "<T1300>" + (new Date()).toString('yyyyMMdd') + "</T1300>";
             request += requestBody;
