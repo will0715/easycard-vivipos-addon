@@ -28,6 +28,7 @@
         _inFile: "/tmp/icerapi_in.data",
         _outputFile: "/tmp/icerapi_out.data",
         _dialogPanel: null,
+        _receiptPrinter: 1,
 
         initial: function() {
             if (!this._cartController) {
@@ -76,7 +77,11 @@
             }
         },
 
-        easycardDeduct: function() {
+        /**
+         * deduct transaction
+         * @param {Boolean} receipt print mode, -1: no print 1: force print
+         */
+        easycardDeduct: function(receiptPrintMode) {
             let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
             let currentTransaction = cart._getTransaction();
             let remainTotal = currentTransaction != null ? currentTransaction.getRemainTotal() : 0;
@@ -107,9 +112,37 @@
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
                     this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_TXN_AMOUNT] > 0) {
-                    this._setWaitDescription(_('Transaction success, please see details below', [result[ICERAPIResponse.KEY_TXN_AMOUNT], result[ICERAPIResponse.KEY_BALANCE]]));
-                    cart._addPayment('easycard', result[ICERAPIResponse.KEY_TXN_AMOUNT], null, 'easycard', result[ICERAPIResponse.KEY_REFERENCE_NUM], false, false);
-                    this.sleep(2000);
+                    let txnAmount = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                    let balance = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_BALANCE]);
+                    let oldBalance = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_OLD_BALANCE]);
+                    let autoReloadAmount = (typeof result[ICERAPIResponse.KEY_AUTOLOAD_TXN_AMOUNT] != 'undefined') ? ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_AUTOLOAD_TXN_AMOUNT]) : 0;
+
+                    this._setWaitDescription(_('Transaction success, please see details below', [txnAmount, balance]));
+
+                    let deviceId = result[ICERAPIResponse.KEY_DEVICE_ID];
+                    let cardId = result[ICERAPIResponse.KEY_RECEIPT_CARD_ID];
+                    let rrn = result[ICERAPIResponse.KEY_REFERENCE_NUM];
+                    let memo = deviceId+'-'+cardId+'-'+rrn;
+                    cart._addPayment('easycard', txnAmount, null, 'easycard', memo, false, false);
+                    this.sleep(500);
+                    if (!receiptPrintMode || receiptPrintMode != -1) {
+                        if (receiptPrintMode == 1 || GREUtils.Dialog.confirm(this.topmostWindow, _('Do you want to print Easycard deduct receipt?'), _('Do you want to print Easycard deduct receipt?'))) {
+                            currentTransaction.data.easycard = {
+                                cardId: cardId,
+                                deviceId: deviceId,
+                                rrn: rrn,
+                                autoReload: autoReloadAmount,
+                                txnDate: this._formatDateTime(result[ICERAPIResponse.KEY_TXN_DATE], result[ICERAPIResponse.KEY_TXN_TIME]),
+                                txnAmount: txnAmount,
+                                balance: balance,
+                                oldBalance: oldBalance,
+                                txnType: 'Deduct',
+                                batchNo: this._getBatchNo()
+                            };
+                            this.printReceipt(currentTransaction, this._receiptPrinter, false, true);
+                        }
+                    }
+                    this.sleep(2500);
                 } else {
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
                     this.sleep(2000);
@@ -137,6 +170,7 @@
             if (!result || ICERAPIResponse.isRetryRequired(result)) {
                 for (let retryAttempts = 0; retryAttempts < 3; retryAttempts++) {
                     if (GREUtils.Dialog.confirm(this.topmostWindow, _('Retry payment'), _('Payment timeout, please check the device and easycard, press the OK button to retry payment'))) {
+                        this.sleep(500);
                         request = icerAPIRequest.deductRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
                         result = this._callICERAPI(request);
                         //return normal result
@@ -150,7 +184,7 @@
                     this.sleep(1000);
                 }
             }
-            return null;
+            return result;
         },
 
         easycardCancel: function(evt) {
@@ -280,6 +314,91 @@
             }
             this.sleep(1000);
             return true;
+        },
+        /**
+         * print easycard receipt
+         *
+         * @param {Object} receipt data
+         * @param {Integer} printer number
+         */
+        printReceipt: function(receiptData, printer, autoPrint, duplicate) {
+            let deviceController = GeckoJS.Controller.getInstanceByName('Devices');
+            let printerController = GeckoJS.Controller.getInstanceByName('Print');
+
+            if (deviceController == null) {
+                NotifyUtils.error(_('Error in device manager! Please check your device configuration'));
+                return;
+            }
+
+            switch (deviceController.isDeviceEnabled('receipt', printer)) {
+                case -2:
+                    NotifyUtils.warn(_('The specified receipt printer [%S] is not configured', [printer]));
+                    return;
+
+                case -1:
+                    NotifyUtils.warn(_('Invalid receipt printer [%S]', [printer]));
+                    return;
+
+                case 0:
+                    NotifyUtils.warn(_('The specified receipt printer [%S] is not enabled', [printer]));
+                    return;
+            }
+
+            let enabledDevices = deviceController.getEnabledDevices('receipt', printer);
+            if (enabledDevices != null) {
+                let template = 'easycard-receipt';
+                let port = enabledDevices[0].port;
+                let portspeed = enabledDevices[0].portspeed;
+                let handshaking = enabledDevices[0].handshaking;
+                let devicemodel = enabledDevices[0].devicemodel;
+                let encoding = enabledDevices[0].encoding;
+                let copies = 1;
+
+                _templateModifiers(TrimPath, encoding);
+
+                let order2 = printerController.deepClone(receiptData.data);
+                let txn2 = new Transaction(true, true);
+                if (txn2) {
+                    txn2.data = order2;
+                }else {
+                    txn2 = receiptData;
+                }
+
+                let data = {
+                    txn: txn2,
+                    order: order2
+                };
+                data.linkgroups = null;
+                data.printNoRouting = 1;
+                data.routingGroups = null;
+                data.autoPrint = autoPrint;
+                data.duplicate = duplicate;
+
+                // check if record already exists on this device if not printing a duplicate
+                if (!data.duplicate) {
+                    let receipt = printerController.isReceiptPrinted(data.order.id, data.order.batchCount, printer);
+                    if (receipt) {
+                        if (fallbackToDuplicate) {
+                            data.duplicate = true;
+                        }
+                        else {
+                            // if auto-print, then we don't issue warning
+                            if (!autoPrint) NotifyUtils.warn(_('A receipt has already been issued for this order on printer [%S]', [ printer ]));
+                            return;
+                        }
+                    }
+                }
+                printerController.printSlip('receipt', data, template, port, portspeed, handshaking, devicemodel, encoding, printer, copies);
+                    }
+        },
+        /**
+         * convert easycard datetime to receipt format
+         * @param {String} transaction date
+         * @param {String} transaction time
+         * @return {String}
+         */
+        _formatDateTime: function(txndate, txntime) {
+            return txndate.substring(0,4)+'/'+txndate.substring(4,6)+'/'+txndate.substring(6,8)+' '+txntime.substring(0,2)+':'+txntime.substring(2,4)+':'+txntime.substring(4,6);
         },
         /**
          * call bridge script to communicate with ICERAPI
