@@ -19,7 +19,6 @@
         name: 'EasycardPayment',
         components: ['Acl'],
         uses: ['ShiftMarker'],
-        _sequenceKey: 'easycardSeq',
         _hostSequenceKey: 'easycardHostSeq',
         _cartController: null,
         _icerAPIPath: '/home/icerapi/',
@@ -85,7 +84,6 @@
             let currentTransaction = cart._getTransaction();
             let remainTotal = currentTransaction != null ? currentTransaction.getRemainTotal() : 0;
             let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
-            let serialNum = this._getSerialNum();
             let hostSerialNum = this._getHostSerialNum();
             if (remainTotal <= 0) {
                 NotifyUtils.info(_('Transaction amount is lower than 0, please check amount'));
@@ -102,7 +100,7 @@
             let waitPanel = this._showWaitPanel(_('Transaction in progress'));
 
             try {
-                let result = this.processDeduct(remainTotal, serialNum, hostSerialNum, transactionSeq);
+                let result = this.processDeduct(remainTotal, hostSerialNum, transactionSeq);
 
                 if (!result) {
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
@@ -156,21 +154,20 @@
         /**
          * process the deduct payment
          * @param {Integer} remaining total
-         * @param {String} serialNum
          * @param {String} HOST serialNum
          * @param {String} transactionSeq
          * @return {Object|null}
          */
-        processDeduct: function(remainTotal, serialNum, hostSerialNum, transactionSeq) {
+        processDeduct: function(remainTotal, hostSerialNum, transactionSeq) {
             let icerAPIRequest = new ICERAPIRequest(this._getBatchNo());
-            let request = icerAPIRequest.deductRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
+            let request = icerAPIRequest.deductRequest(remainTotal, hostSerialNum, transactionSeq);
             let result = this._callICERAPI(request);
             //timeout or retry required
             if (!result || ICERAPIResponse.isRetryRequired(result)) {
                 for (let retryAttempts = 0; retryAttempts < 3; retryAttempts++) {
                     if (GREUtils.Dialog.confirm(this.topmostWindow, _('Retry payment'), _('Payment timeout, please check the device and easycard, press the OK button to retry payment'))) {
                         this.sleep(500);
-                        request = icerAPIRequest.deductRequest(remainTotal, serialNum, hostSerialNum, transactionSeq);
+                        request = icerAPIRequest.deductRequest(remainTotal, hostSerialNum, transactionSeq);
                         result = this._callICERAPI(request);
                         //return normal result
                         if (result && !ICERAPIResponse.isRetryRequired(result)) {
@@ -243,10 +240,9 @@
             let waitPanel = this._showWaitPanel(_('show_progress'));
 
             try {
-                let serialNum = this._getSerialNum();
                 let hostSerialNum = this._getHostSerialNum();
-                let icerAPIRequest = new ICERAPIRequest();
-                let request = icerAPIRequest.queryRequest(serialNum, hostSerialNum);
+                let icerAPIRequest = new ICERAPIRequest(this._getBatchNo());
+                let request = icerAPIRequest.queryRequest(hostSerialNum);
                 let result = this._callICERAPI(request);
                 if (!result) {
                     this._setWaitDescription(_('transaction_fail'));
@@ -277,14 +273,12 @@
 
             this._dialogPanel = this._showDialog(_('Easycard transaction log upload, check connection...'));
             try {
-                let serialNum = this._getSerialNum();
                 let hostSerialNum = this._getHostSerialNum();
                 let icerAPIRequest = new ICERAPIRequest(this._getBatchNo());
-                let request = icerAPIRequest.settlementRequest(serialNum, hostSerialNum);
+                let request = icerAPIRequest.settlementRequest(hostSerialNum);
                 let result = this._callICERAPI(request);
                 if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_SUCCESS) {
                     //reset sequence every settlement
-                    SequenceModel.resetLocalSequence(this._sequenceKey, 0);
                     SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
                     this._setCaption(_('Easycard transaction log upload success!'));
                     this.sleep(1000);
@@ -305,10 +299,9 @@
          * @return {Boolean}
          */
         easycardSignOn: function() {
-            let serialNum = this._getSerialNum();
             let hostSerialNum = this._getHostSerialNum();
             let icerAPIRequest = new ICERAPIRequest();
-            let request = icerAPIRequest.signonRequest(serialNum, hostSerialNum);
+            let request = icerAPIRequest.signonRequest(hostSerialNum);
             let result = this._callICERAPI(request);
             if (!result || result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
                 this._setCaption(_('Easycard sign on failed, please check the device is connected to the POS, and restart the POS'));
@@ -432,14 +425,6 @@
                 GeckoJS.BaseObject.log('ERROR', _('Failed to call ICERAPI (%S), request data: [%S].', [e, request]));
             }
             return result;
-        },
-        /**
-         * get new serial number
-         * @return {String}
-         */
-        _getSerialNum: function() {
-            let sequenceNo = SequenceModel.getLocalSequence(this._sequenceKey);
-            return GeckoJS.String.padLeft(sequenceNo, 6, "0");
         },
         /**
          * get host serial number
