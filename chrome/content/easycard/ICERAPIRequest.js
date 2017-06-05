@@ -86,7 +86,9 @@ ICERAPIRequest.prototype = {
      * @return {Number} calculated amount
      */
     calAmount: function(amount) {
-        return amount*this.TXN_AMT_UNIT;
+        let tmpAmount = amount*this.TXN_AMT_UNIT;
+        let txnAmount = parseInt(Math.round(tmpAmount));
+        return txnAmount;
     },
     /**
      * get icerapi transaction sequence from POS transaction sequence
