@@ -32,7 +32,7 @@
         initial: function() {
             if (!this._cartController) {
                 this._cartController = GeckoJS.Controller.getInstanceByName('Cart');
-                this._cartController.addEventListener('beforeVoidSale', this.easycardCancel, this);
+                this._cartController.addEventListener('confirmVoidSale', this.easycardRefund, this);
             }
 
             if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
@@ -182,48 +182,58 @@
             }
             return result;
         },
-
-        easycardCancel: function(evt) {
+        /**
+         * refund easycard transaction when voidsale
+         */
+        easycardRefund: function(evt) {
             let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
             let currentTransaction = cart._getTransaction();
             let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
-            let serialNum = this._getSerialNum();
             let hostSerialNum = this._getHostSerialNum();
             if (!transactionSeq) {
-                NotifyUtils.info(_('data_error'));
-                evt.preventDefault();
-                return cancelResult;
+                NotifyUtils.info(_('Data error, please contact technical support'));
+                return false;
             }
             let waitPanel = null;
             try {
-                let datasource = GeckoJS.ConnectionManager.getDataSource('order');
-                let orderPayments = datasource.fetchAll('SELECT name,memo1,memo2,amount FROM order_payments where order_id="' + currentTransaction.data.id + '"');
+                let refundPayments = evt.data.refundPayments;
 
-                for (i = 0; i < orderPayments.length; i++) {
-                    if (orderPayments[i].name == "easycard") {
+                if (typeof refundPayments === 'object') {
 
-                        $.blockUI({
-                            "message": '<h3>' + _('screen_lock') + '</h3>'
-                        });
-                        waitPanel = this._showWaitPanel(_('show_progress'));
+                    for (i = 0; i < refundPayments.length; i++) {
+                        if (refundPayments[i].name == "easycard") {
+                            let refundAmount = Math.abs(refundPayments[i].amount);
 
-                        let request = this.newICERAPIRequest().cancelRequest(orderPayments[i].amount, serialNum, hostSerialNum, transactionSeq);
-                        let result = this._callICERAPI(request);
-                        if (!result || (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || orderPayments[i].amount != result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
-                            this._setWaitDescription(_('cancel_fail'));
-                            this.sleep(4000);
-                            evt.preventDefault();
-                        } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                            this._setWaitDescription(_('cancel_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
-                            this.sleep(4000);
-                            evt.preventDefault();
-                        } else {
-                            this._setWaitDescription(_('cancel_success') + result[ICERAPIResponse.KEY_TXN_AMOUNT]);
-                            this.sleep(3000);
+                            $.blockUI({
+                                "message": '<h3>' + _('Screen Lock') + '</h3>'
+                            });
+                            waitPanel = this._showWaitPanel(_('Transaction in progress'));
+
+                            let icerAPIRequest = new ICERAPIRequest(this._getBatchNo());
+                            let request = icerAPIRequest.refundRequest(refundAmount, hostSerialNum, transactionSeq);
+                            let result = this._callICERAPI(request);
+                            if (!result) {
+                                this._setWaitDescription(_('Transaction failed, cannot refund payment with easycard'));
+                                this.sleep(2000);
+                                evt.preventDefault();
+                            } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
+                                this._setWaitDescription(_('Transaction failed, cannot refund payment with easycard') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
+                                this.sleep(2000);
+                                evt.preventDefault();
+                            } else if (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || refundAmount != ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
+                                this._setWaitDescription(_('Transaction failed, cannot refund payment with easycard'));
+                                this.sleep(2000);
+                                evt.preventDefault();
+                            } else {
+                                let txnAmount = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_TXN_AMOUNT]);
+                                this._setWaitDescription(_('Transaction success, payment is refunded with easycard', [txnAmount]));
+                                this.sleep(2000);
+                            }
                         }
                     }
                 }
             } catch (e) {
+                this.log('Error', e.message);
                 evt.preventDefault();
             } finally {
                 if (waitPanel) {
