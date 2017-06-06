@@ -101,8 +101,9 @@
          * Note: icerapi cannot excute in long directory prefix
          */
         copyScripts: function() {
-            let icerapiProgram = this._icerAPIPath+'icerapi';
-            if (!GREUtils.File.exists(icerapiProgram)) {
+            let flagInstallFile = GREUtils.File.chromeToPath('chrome://' + this.packageName + '/content/flags/first_install');
+            if (GREUtils.File.exists(flagInstallFile)) {
+                GREUtils.File.remove(flagInstallFile);
                 try {
                     GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
                 } catch (e) {
@@ -110,8 +111,10 @@
                 }
             }
 
+            let icerapiProgram = this._icerAPIPath+'icerapi';
+
             if (!GREUtils.File.exists(icerapiProgram)) {
-                alert(_('Install EasyCard library failed, please contact technical support.'));
+                alert(_('Failed to install easycard library, please contact technical support.'));
             }
         },
 
