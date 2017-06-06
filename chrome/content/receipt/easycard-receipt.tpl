@@ -33,8 +33,8 @@ ${'RRN:'|left:26}${order.easycard.rrn}
 {if order.easycard.rrn}
 ${'交易前餘額:'|left:26}${order.easycard.oldBalance}
 {/if}
-{if order.easycard.autoReload > 0}
-${'自動加值:'|left:26}${order.easycard.autoReload}
+{if order.easycard.autoloadAmount > 0}
+${'自動加值:'|left:26}${order.easycard.autoloadAmount}
 {/if}
 ${'交易金額:'|left:26}${order.easycard.txnAmount}
 ${'交易後餘額:'|left:26}${order.easycard.balance}

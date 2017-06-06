@@ -63,11 +63,17 @@ ICERAPIRequest.prototype = {
     /**
      * get the settlement's request xml string
      * @param {String} HOST serialNum
+     * @param {Number} transaction count
+     * @param {Number} transaction total
      * @return {String} xml
      */
-    settlementRequest: function(hostSerialNum) {
+    settlementRequest: function(hostSerialNum, transactionCount, transactionTotal) {
         let requestBody = "<T1100>" + this.settlementSequence +"</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
+        requestBody += "<T5591>" + transactionCount + "</T5591>";
+        requestBody += "<T5592>"
+        requestBody += "<T559201>" + transactionTotal + "</T559201>";
+        requestBody += "</T5592>";
         return this._buildRequestXml(this.MESSAGE_TYPE.settlement, this.PROCESS_CODE.settlement, requestBody);
     },
     /**
