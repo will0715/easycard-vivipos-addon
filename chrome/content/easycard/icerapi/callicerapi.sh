@@ -1,8 +1,18 @@
 #!/bin/bash
 script=$(readlink -f "$0")
 scriptpath=$(dirname "$script")
+logfile=/var/log/easycard_vivipos.log
 
 cd ${scriptpath}
+
+
+WriteLog() {
+    logtype=$1
+    data=$2
+    now=$(date +"%Y-%m-%d %H:%M:%S")
+    content="${now} [${logtype}] ${data}"
+    echo ${content} >> ${logfile}
+}
 
 #add-on variable
 inputdata="/tmp/icerapi_in.data"
@@ -15,6 +25,8 @@ icerapires=${icerdatapath}"ICERAPI.RES"
 icerapiresok=${icerdatapath}"ICERAPI.RES.OK"
 
 reqxml=$(cat ${inputdata})
+#write request log
+WriteLog "request" "${reqxml}"
 
 #start process if request xml if not empty
 if [ ! -z "$reqxml" -a "$reqxml" != " " ]; then
@@ -31,5 +43,7 @@ if [ ! -z "$reqxml" -a "$reqxml" != " " ]; then
         #write response to output data file
         response=$(cat ${icerapires})
         echo ${response} > ${outputdata}
+        #wrtie response log
+        WriteLog "response" "${response}"
     fi
 fi

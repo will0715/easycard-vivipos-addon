@@ -51,6 +51,9 @@
 
             this.copyScripts();
 
+            //copy logrotate script to logrotate.d
+            GREUtils.File.copy(this._scriptPath+'vivipos_easycardlog', '/etc/logrotate.d/');
+
             //startup sign on to get machine ready.
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
             try {
