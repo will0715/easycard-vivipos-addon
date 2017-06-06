@@ -39,12 +39,8 @@
             }
 
             if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
-                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('shiftChanged', function(evt) {
-                    if (evt.data.closing) {
-                        alert(_('Please keep easycard device connected during shift change'));
-                    }
-                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('periodClosed', this.easycardSettlement, this);
-                }, this);
+                GeckoJS.Controller.getInstanceByName('ShiftChanges').addEventListener('shiftChanged', this.easycardSettlement, this);
+            }
 
             if (GeckoJS.Controller.getInstanceByName('Main')) {
                 GeckoJS.Controller.getInstanceByName('Main').addEventListener('afterClearOrderData', this.expireData, this);
@@ -406,6 +402,8 @@
          * ICERAPI settlement
          */
         easycardSettlement: function(evt) {
+            alert(_('Please keep easycard device connected during shift change'));
+
             $.blockUI({
                 "message": '<h3>' + _('Screen Lock') + '</h3>',
                 css: { top: '37.5%' }
