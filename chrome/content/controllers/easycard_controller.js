@@ -28,6 +28,7 @@
         _outputFile: "/tmp/icerapi_out.data",
         _dialogPanel: null,
         _receiptPrinter: 1,
+        _prefsPrefix: 'vivipos.fec.settings.easycard_payment',
 
         initial: function() {
             if (!this._cartController) {
