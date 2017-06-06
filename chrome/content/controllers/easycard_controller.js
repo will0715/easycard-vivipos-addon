@@ -290,6 +290,8 @@
                 if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_SUCCESS) {
                     //reset sequence every settlement
                     SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
+                    //reset batch no when success settlement
+                    this._resetBatchNo();
                     this._setCaption(_('Easycard transaction log upload success!'));
                     this.sleep(1000);
                     return;
@@ -533,14 +535,34 @@
         },
 
         _getBatchNo: function() {
-            let shiftChanges = GeckoJS.Controller.getInstanceByName('ShiftChanges');
-            let shiftMarker = shiftChanges._getShiftMarker();
-            if (shiftMarker) {
-                let batchNo = '';
-                batchNo = (new Date(shiftMarker.sale_period * 1000)).toString('yyMMdd') + GeckoJS.String.padLeft(shiftMarker.shift_number, 2, "0")
-                return batchNo;
+            let batchNo = null;
+            let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
+            if (!prefBatchNo) {
+                batchNo = this._writeBatchNo();
+            } else {
+                batchNo = prefBatchNo;
             }
-            return null;
+            return batchNo;
+        },
+
+        _writeBatchNo: function(sequence) {
+            if (!sequence) sequence = 0;
+            let batchNo = (new Date()).toString('yyMMdd') + GeckoJS.String.padLeft(sequence, 2, "0");
+            GeckoJS.Configure.write(this._prefsPrefix+'.batchNo', batchNo);
+            return batchNo;
+        },
+
+        _resetBatchNo: function() {
+            let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
+            let batchDate = prefBatchNo.substring(0,6);
+            let batchSeq = prefBatchNo.substring(6);
+            let currentDate = (new Date()).toString('yyMMdd');
+            if (batchDate != currentDate) {
+                return this._writeBatchNo();
+            } else {
+                let newBatchSeq = batchSeq + 1;
+                return this._writeBatchNo(newBatchSeq);
+            }
         }
     };
 
