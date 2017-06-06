@@ -14,6 +14,8 @@
     include('chrome://easycard_payment/content/models/easycard_transaction.js');
 
     var mainWindow = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("Vivipos:Main");
+    var extMgr = Components.classes["@mozilla.org/extensions/manager;1"].getService(Components.interfaces.nsIExtensionManager);
+    var extItem = extMgr.getItemForID('viviecr@firich.com.tw');
 
     const __controller__ = {
 
@@ -35,7 +37,11 @@
         initial: function() {
             if (!this._cartController) {
                 this._cartController = GeckoJS.Controller.getInstanceByName('Cart');
-                this._cartController.addEventListener('confirmVoidSale', this.easycardRefund, this);
+                if (extItem && extItem.version.indexOf('1.3.3') != -1) {
+                    this._cartController.addEventListener('confirmVoidSale', this.easycardRefund, this);
+                } else {
+                    this._cartController.addEventListener('beforeVoidSale', this.easycardRefundOld, this);
+                }
             }
 
             if (GeckoJS.Controller.getInstanceByName('ShiftChanges')) {
@@ -292,6 +298,18 @@
          * refund easycard transaction when voidsale
          */
         easycardRefund: function(evt) {
+            return this.processRefund(evt);
+        },
+        /**
+         * refund for old ecr version
+         */
+        easycardRefundOld: function(evt) {
+            return this.processRefund(evt, 'old');
+        },
+        /**
+         * process refund easycard transaction
+         */
+        processRefund: function(evt, version) {
             let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
             let currentTransaction = cart._getTransaction();
             let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
@@ -302,7 +320,12 @@
             }
             let waitPanel = null;
             try {
-                let refundPayments = evt.data.refundPayments;
+                let refundPayments = null;
+                if (version === 'old') {
+                    refundPayments = evt.data.OrderPayment;
+                } else {
+                    refundPayments = evt.data.refundPayments;
+                }
 
                 if (typeof refundPayments === 'object') {
 
