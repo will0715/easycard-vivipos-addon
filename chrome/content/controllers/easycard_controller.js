@@ -86,7 +86,7 @@
                 var sqlLines = schemaSqlFile.readAllLine();
                 schemaSqlFile.close();
 
-                var datasource = GeckoJS.ConnectionManager.getDataSource('order');
+                var datasource = GeckoJS.ConnectionManager.getDataSource('easycard_data');
                 try {
                     sqlLines.forEach(function(sql) {
                         datasource.execute(sql);
