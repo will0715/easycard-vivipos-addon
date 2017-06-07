@@ -13,3 +13,4 @@ pref("vivipos.fec.registry.function.programmable.easycard_payment_query.controll
 pref("vivipos.fec.registry.function.programmable.easycard_payment_query.label", "悠遊卡查詢");
 pref("vivipos.fec.registry.function.programmable.easycard_payment_query.name", "悠遊卡查詢");
 pref("vivipos.fec.registry.function.programmable.easycard_payment_query.data", "");
+pref("vivipos.fec.registry.function.programmable.easycard_payment_query.version", "1.0.0");

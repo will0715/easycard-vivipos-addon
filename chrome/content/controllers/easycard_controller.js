@@ -63,7 +63,7 @@
             //startup sign on to get machine ready.
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
             try {
-                this.easycardSignOn();
+                this.easycardSignOn(true);
             } catch (e) {
                 this.log('DEBUG', e.message);
             } finally {
@@ -250,7 +250,7 @@
                             this.printReceipt(currentTransaction, this._receiptPrinter, false, true);
                         }
                     }
-                    this.sleep(2500);
+                    this.sleep(1500);
                 } else {
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
                     this.sleep(2000);
@@ -382,7 +382,7 @@
 
                                 this.sleep(500);
                                 this._setWaitDescription(_('Transaction success, payment is refunded with easycard', [txnAmount, balance]));
-                                this.sleep(2000);
+                                this.sleep(1500);
                             }
                         }
                     }
@@ -400,9 +400,9 @@
 
         easycardQuery: function() {
             $.blockUI({
-                "message": '<h3>' + _('screen_lock') + '</h3>'
+                "message": '<h3>' + _('Screen Lock') + '</h3>'
             });
-            let waitPanel = this._showWaitPanel(_('show_progress'));
+            let waitPanel = this._showWaitPanel(_('Transaction in progress'));
 
             try {
                 let hostSerialNum = this._getHostSerialNum();
@@ -410,15 +410,15 @@
                 let request = icerAPIRequest.queryRequest(hostSerialNum);
                 let result = this._callICERAPI(request);
                 if (!result) {
-                    this._setWaitDescription(_('transaction_fail'));
-                    this.sleep(3000);
+                    this._setWaitDescription(_('Transaction failed, please present card again'));
+                    this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitDescription(_('transaction_fail') + ' : ' + result[ICERAPIResponse.KEY_ERROR_MSG]);
-                    this.sleep(3000);
+                    this._setWaitDescription(_('Transaction failed, please present card again') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
+                    this.sleep(2000);
                 } else {
                     let balance = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_BALANCE]);
                     this._setWaitDescription(_('The balance of the easycard is %S', [balance]));
-                    this.sleep(2000);
+                    this.sleep(1500);
                 }
             } catch (e) {
                 this.log('ERROR', e);
@@ -467,18 +467,23 @@
         /**
          * Easycard Sign On Function
          * must do before communicating with ICERAPI
+         * @param {Boolean} retry
          * @return {Boolean}
          */
-        easycardSignOn: function() {
+        easycardSignOn: function(retry) {
             let hostSerialNum = this._getHostSerialNum();
             let icerAPIRequest = new ICERAPIRequest();
             let request = icerAPIRequest.signonRequest(hostSerialNum);
             let result = this._callICERAPI(request);
             if (!result || result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                this._setCaption(_('Easycard sign on failed, please check the device is connected to the POS, and restart the POS'));
+                if (retry) {
+                    return this.easycardSignOn();
+                }
+                this._setCaption(_('Easycard sign on failed, please check the device is connected to the POS, and then restart'));
                 this.sleep(1500);
                 return false;
             }
+            this._setCaption(_('Easycard sign on success'));
             this.sleep(1000);
             return true;
         },
@@ -589,7 +594,7 @@
                             this._setHostSerialNum(result[ICERAPIResponse.KEY_HOST_SERIAL_NUM]);
                         }
                     } catch(e) {
-                        this.log('DEBUG', e.message);
+                        this.log('ERROR', e.message);
                     }
                 }
             } catch (e) {
