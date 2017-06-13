@@ -13,7 +13,8 @@ ICERAPIRequest.prototype = {
         "deduct": "606100",
         "refund": "620061",
         "query": "296000",
-        "settlement": "900099"
+        "settlement": "900099",
+        "cancel": "816100"
     },
 
     MESSAGE_TYPE: {
@@ -48,6 +49,26 @@ ICERAPIRequest.prototype = {
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T3701>" + transactionSeq + "</T3701>";
         return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.refund, requestBody);
+    },
+    /**
+     * get the cancel's request xml string
+     * @param {Integer} cancel amount
+     * @param {String} HOST serialNum
+     * @param {String} transactionSeq
+     * @param {String} original device id
+     * @param {String} original reference number
+     * @param {String} original transaction date
+     * @return {String} xml
+     */
+    cancelRequest: function(cancelAmount, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate) {
+        let requestBody = "<T0400>" + this.calAmount(cancelAmount) + "</T0400>";
+        requestBody += "<T1100>" + this.getTxnSequence(transactionSeq) + "</T1100>";
+        requestBody += "<T1101>" + hostSerialNum + "</T1101>";
+        requestBody += "<T5581>" + oriDeviceId + "</T5581>";
+        requestBody += "<T5582>" + oriRRN + "</T5582>";
+        requestBody += "<T5583>" + oriTxnDate + "</T5583>";
+        requestBody += "<T3701>" + transactionSeq + "</T3701>";
+        return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.cancel, requestBody);
     },
     /**
      * get the query's request xml string

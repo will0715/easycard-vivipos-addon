@@ -56,6 +56,14 @@
 
         },
 
+        getByOrderIdAndTxnType: function(orderId, txnType) {
+            let record = this.find('first', {
+                conditions: "easycard_transactions.order_id='"+orderId+"' AND easycard_transactions.transaction_type='"+txnType+"'",
+                recursive: 0
+            }) || null;
+            return record;
+        },
+
         getTotalByMsgTypeAndBatchNo: function(batchNo, messageType) {
             let result = {
                 count: 0,
@@ -63,7 +71,7 @@
             };
 
             let records = this.find('all', {
-                    conditions: "easycard_transactions.batch_no='"+batchNo+"' AND message_type = '"+messageType+"'",
+                    conditions: "easycard_transactions.batch_no='"+batchNo+"' AND easycard_transactions.message_type = '"+messageType+"'",
                     recursive: 0
             }) || null;
 
