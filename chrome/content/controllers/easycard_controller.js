@@ -314,9 +314,34 @@
          * cancel easycard transaction
          */
         easycardCancel: function() {
-            GeckoJS.Session.set('easycard.payment.cancel', true);
-            let cart = GeckoJS.Controller.getInstanceByName('Cart');
-            return cart.voidSale('1,easycard,0');
+            let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
+            let currentTransaction = cart._getTransaction();
+            if (!currentTransaction) {
+                NotifyUtils.warn(_('No order to void'));
+                return;
+            }
+
+            if (currentTransaction.isCancel() || currentTransaction.isVoided()) {
+                NotifyUtils.warn(_('The order has already been cancelled or voided'));
+                return;
+            }
+
+            let orderModel = new OrderModel();
+            let terminalNo = GeckoJS.Session.get('terminal_no');
+
+            let lastOrder = orderModel.find('first', {conditions: 'terminal_no = "' + terminalNo + '" AND (status = 1)',
+                                                      order: 'transaction_submitted DESC, sequence DESC'});
+
+            if (lastOrder && lastOrder.id === currentTransaction.data.id) {
+                let easycardTransactionModel = new EasycardTransaction();
+                let easycardTransaction = easycardTransactionModel.getByOrderIdAndTxnType(lastOrder.id, 'deduct');
+                if (easycardTransaction) {
+                    GeckoJS.Session.set('easycard.payment.cancel', true);
+                    let cart = GeckoJS.Controller.getInstanceByName('Cart');
+                    return cart.voidSale('1,easycard,0'); 
+                }
+            }
+            NotifyUtils.warn(_('Easycard cancellation only accept last order.'));
         },
         /**
          * process refund easycard transaction
@@ -835,12 +860,12 @@
         _resetBatchNo: function() {
             let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
             let batchDate = prefBatchNo.substring(0,6);
-            let batchSeq = prefBatchNo.substring(6);
+            let batchSeq = prefBatchNo.slice(-2);
             let currentDate = (new Date()).toString('yyMMdd');
             if (batchDate != currentDate) {
                 return this._writeBatchNo();
             } else {
-                let newBatchSeq = batchSeq + 1;
+                let newBatchSeq = parseInt(batchSeq) + 1;
                 return this._writeBatchNo(newBatchSeq);
             }
         }
