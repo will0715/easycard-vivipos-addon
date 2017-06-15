@@ -1,7 +1,7 @@
 /var/log/easycard_vivipos.log {
   daily
   dateext
-  olddir /data/easycard
+  olddir /data/profile/log/easycard
   missingok
   rotate 180
   compress

@@ -5,7 +5,7 @@ scriptpath=$(dirname "$script")
 cd ${scriptpath}
 
 #create easycard data directory
-mkdir -p /data/easycard
+mkdir -p /data/profile/log/easycard
 
 destination=/home/icerapi/
 #create icerapi library directory
