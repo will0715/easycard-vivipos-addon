@@ -204,7 +204,7 @@
 
             try {
                 let batchNo = this._getBatchNo();
-                let result = this.processDeduct(batchNo, remainTotal, hostSerialNum, transactionSeq);
+                let result = this.processPayment('deduct', batchNo, remainTotal, hostSerialNum, transactionSeq);
 
                 if (!result) {
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
@@ -238,7 +238,7 @@
                         txnType: 'Deduct',
                         batchNo: batchNo
                     };
-                    cart._addPayment('easycard', txnAmount, null, 'easycard', memo, false, false);
+                    cart._addPayment('easycard', txnAmount, txnAmount, 'easycard', memo, false, false);
 
                     //save easycard transactin record
                     let easycardTransaction = new EasycardTransaction();
@@ -264,22 +264,38 @@
         },
         /**
          * process the deduct payment
+         * @param {String} payment type
          * @param {String} batch no
          * @param {Integer} remaining total
          * @param {String} HOST serialNum
          * @param {String} transactionSeq
+         * @param {String} original device id
+         * @param {String} original reference number
+         * @param {String} original transaction date
          * @return {Object|null}
          */
-        processDeduct: function(batchNo, remainTotal, hostSerialNum, transactionSeq) {
+        processPayment: function(paymentType, batchNo, remainTotal, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate) {
+            let funcName = '';
+            switch (paymentType) {
+                case 'deduct':
+                    funcName = 'deductRequest';
+                break
+                case 'cancel':
+                    funcName = 'cancelRequest';
+                break;
+                case 'refund':
+                    funcName = 'refundRequest';
+                break;
+            }
             let icerAPIRequest = new ICERAPIRequest(batchNo);
-            let request = icerAPIRequest.deductRequest(remainTotal, hostSerialNum, transactionSeq);
+            let request = icerAPIRequest[funcName](remainTotal, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate);
             let result = this._callICERAPI(request);
             //timeout or retry required
             if (!result || ICERAPIResponse.isRetryRequired(result)) {
                 for (let retryAttempts = 0; retryAttempts < 3; retryAttempts++) {
                     if (GREUtils.Dialog.confirm(this.topmostWindow, _('Retry payment'), _('Payment timeout, please check the device and easycard, press the OK button to retry payment'))) {
                         this.sleep(500);
-                        request = icerAPIRequest.deductRequest(remainTotal, hostSerialNum, transactionSeq);
+                        request = icerAPIRequest[funcName](remainTotal, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate);
                         result = this._callICERAPI(request);
                         //return normal result
                         if (result && !ICERAPIResponse.isRetryRequired(result)) {
@@ -329,7 +345,7 @@
             let orderModel = new OrderModel();
             let terminalNo = GeckoJS.Session.get('terminal_no');
 
-            let lastOrder = orderModel.find('first', {conditions: 'terminal_no = "' + terminalNo + '" AND (status = 1)',
+            let lastOrder = orderModel.find('first', {conditions: 'terminal_no = "' + terminalNo + '" AND (status = 1 OR status = -2)',
                                                       order: 'transaction_submitted DESC, sequence DESC'});
 
             if (lastOrder && lastOrder.id === currentTransaction.data.id) {
@@ -338,7 +354,7 @@
                 if (easycardTransaction) {
                     GeckoJS.Session.set('easycard.payment.cancel', true);
                     let cart = GeckoJS.Controller.getInstanceByName('Cart');
-                    return cart.voidSale('1,easycard,0'); 
+                    return cart.voidSale('1,auto,0'); 
                 }
             }
             NotifyUtils.warn(_('Easycard cancellation only accept last order.'));
@@ -376,9 +392,7 @@
                             waitPanel = this._showWaitPanel(_('Transaction in progress'));
 
                             let batchNo = this._getBatchNo();
-                            let icerAPIRequest = new ICERAPIRequest(batchNo);
-                            let request = icerAPIRequest.refundRequest(refundAmount, hostSerialNum, transactionSeq);
-                            let result = this._callICERAPI(request);
+                            let result = this.processPayment('refund', batchNo, refundAmount, hostSerialNum, transactionSeq);
                             if (!result) {
                                 this._setWaitDescription(_('Transaction failed, cannot refund payment with easycard'));
                                 this.sleep(2000);
@@ -480,9 +494,7 @@
                             let oriDeviceId = easycardDetails[ICERAPIResponse.KEY_DEVICE_ID];
                             let oriRRN = easycardDetails[ICERAPIResponse.KEY_REFERENCE_NUM];
                             let oriTxnDate = easycardDetails[ICERAPIResponse.KEY_TXN_DATE];
-                            let icerAPIRequest = new ICERAPIRequest(batchNo);
-                            let request = icerAPIRequest.cancelRequest(cancelAmount, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate);
-                            let result = this._callICERAPI(request);
+                            let result = this.processPayment('cancel', batchNo, cancelAmount, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate);
                             if (!result) {
                                 this._setWaitDescription(_('Transaction failed, cannot cancel payment with easycard'));
                                 this.sleep(2000);
