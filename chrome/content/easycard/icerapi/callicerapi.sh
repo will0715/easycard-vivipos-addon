@@ -21,6 +21,7 @@ outputdata="/tmp/icerapi_out.data"
 #icerapi variable
 icerdatapath="ICERData/"
 icerapireq=${icerdatapath}"ICERAPI.REQ"
+icerapireqok=${icerdatapath}"ICERAPI.REQ.OK"
 icerapires=${icerdatapath}"ICERAPI.RES"
 icerapiresok=${icerdatapath}"ICERAPI.RES.OK"
 
@@ -32,10 +33,12 @@ WriteLog "request" "${reqxml}"
 if [ ! -z "$reqxml" -a "$reqxml" != " " ]; then
     rm ${outputdata}
     rm ${icerapireq}
+    rm ${icerapireqok}
     rm ${icerapires}
     rm ${icerapiresok}
     #write request xml to icerapi request file
     echo ${reqxml} > ${icerapireq}
+    touch ${icerapireqok}
     #execute icerapi program
     LD_LIBRARY_PATH=${scriptpath} ${scriptpath}/icerapi
     #read response if response ok file exists
