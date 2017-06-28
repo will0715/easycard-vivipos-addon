@@ -92,6 +92,9 @@
                     result.count += 1;
                     txnTotal += record.amount;
                     txnTotal += record.autoload_amount;
+                    if (record.autoload_amount > 0) {
+                        result.count += 1;
+                    }
                 }
                 result.total = txnTotal;
             }
