@@ -312,17 +312,27 @@
         },
 
         easycardVoidSale: function(evt) {
-            if (true === GeckoJS.Session.get('easycard.payment.cancel')) {
+            let cancelTime = GeckoJS.Session.get('easycard.payment.cancel') || false;
+            if (cancelTime) {
                 GeckoJS.Session.set('easycard.payment.cancel', false);
-                return this.processCancel(evt);
+                if ((new Date()).getTime() - cancelTime < 30000) {
+                    return this.processCancel(evt);
+                } else if (GREUtils.Dialog.confirm(this.topmostWindow, _('Are you sure to cancel? Press the Cancel button to do refund'), _('Are you sure to cancel? Press the Cancel button to do refund'))) {
+                    return this.processCancel(evt);
+                }
             }
             return this.processRefund(evt);
         },
 
         easycardVoidSaleOld: function(evt) {
-            if (true === GeckoJS.Session.get('easycard.payment.cancel')) {
+            let cancelTime = GeckoJS.Session.get('easycard.payment.cancel') || false;
+            if (cancelTime) {
                 GeckoJS.Session.set('easycard.payment.cancel', false);
-                return this.processCancel(evt, 'old');
+                if ((new Date()).getTime() - cancelTime < 30000) {
+                    return this.processCancel(evt, 'old');
+                } else if (GREUtils.Dialog.confirm(this.topmostWindow, _('Are you sure to cancel? Press the Cancel button to do refund'), _('Are you sure to cancel? Press the Cancel button to do refund'))) {
+                    return this.processCancel(evt, 'old');
+                }
             }
             return this.processRefund(evt, 'old');
         },
@@ -342,22 +352,14 @@
                 return;
             }
 
-            let orderModel = new OrderModel();
             let terminalNo = GeckoJS.Session.get('terminal_no');
-
-            let lastOrder = orderModel.find('first', {conditions: 'terminal_no = "' + terminalNo + '" AND (status = 1 OR status = -2)',
-                                                      order: 'transaction_submitted DESC, sequence DESC'});
-
-            if (lastOrder && lastOrder.id === currentTransaction.data.id) {
-                let easycardTransactionModel = new EasycardTransaction();
-                let easycardTransaction = easycardTransactionModel.getByOrderIdAndTxnType(lastOrder.id, 'deduct');
-                if (easycardTransaction) {
-                    GeckoJS.Session.set('easycard.payment.cancel', true);
-                    let cart = GeckoJS.Controller.getInstanceByName('Cart');
-                    return cart.voidSale('1,auto,0'); 
-                }
+            let easycardTransactionModel = new EasycardTransaction();
+            let lastOrder = easycardTransactionModel.getLastOrder(terminalNo);
+            if (lastOrder && lastOrder.order_id === currentTransaction.data.id) {
+                GeckoJS.Session.set('easycard.payment.cancel', (new Date()).getTime());
+                return cart.voidSale('1,auto,0'); 
             }
-            NotifyUtils.warn(_('Easycard cancellation only accept last order.'));
+            NotifyUtils.warn(_('Easycard cancellation only accept last order'));
         },
         /**
          * process refund easycard transaction
@@ -462,6 +464,15 @@
             }
             if (!transactionSeq) {
                 NotifyUtils.info(_('Data error, please contact technical support'));
+                return evt.preventDefault();
+            }
+
+            let terminalNo = GeckoJS.Session.get('terminal_no');
+            let easycardTransactionModel = new EasycardTransaction();
+            let lastOrder = easycardTransactionModel.getLastOrder(terminalNo);
+            if (lastOrder && lastOrder.order_id != transactionId) {
+                GeckoJS.Session.set('easycard.payment.cancel', false);
+                NotifyUtils.warn(_('Easycard cancellation only accept last order'));
                 return evt.preventDefault();
             }
             let waitPanel = null;

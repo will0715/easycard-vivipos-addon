@@ -56,6 +56,14 @@
 
         },
 
+        getLastOrder: function(terminalNo) {
+            let record = this.find('first', {
+                conditions: 'terminal_no = "' + terminalNo + '"',
+                order: 'created DESC'
+            }) || null;
+            return record;
+        },
+
         getByOrderIdAndTxnType: function(orderId, txnType) {
             let terminalNo = GeckoJS.Session.get('terminal_no');
             let record = this.find('first', {
