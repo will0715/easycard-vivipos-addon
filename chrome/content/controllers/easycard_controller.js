@@ -210,7 +210,7 @@
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
                     this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitDescription(_('Transaction failed, cannot pay with easycard') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
+                    this._setWaitDescription(this._getErrorMsg(result));
                     this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_TXN_AMOUNT] > 0) {
                     let easycardTxnAmount = result[ICERAPIResponse.KEY_TXN_AMOUNT];
@@ -398,7 +398,7 @@
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                                this._setWaitDescription(_('Transaction failed, cannot refund payment with easycard') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
+                                this._setWaitDescription(this._getErrorMsg(result));
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || refundAmount != ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
@@ -500,7 +500,7 @@
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                                this._setWaitDescription(_('Transaction failed, cannot cancel payment with easycard') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
+                                this._setWaitDescription(this._getErrorMsg(result));
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || cancelAmount != ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
@@ -566,7 +566,7 @@
                     this._setWaitDescription(_('Transaction failed, please present card again'));
                     this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitDescription(_('Transaction failed, please present card again') + "\n" + _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]));
+                    this._setWaitDescription(_('Transaction failed, please present card again') + "\n" + this._getErrorMsg(result));
                     this.sleep(2000);
                 } else {
                     let balance = ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_BALANCE]);
@@ -880,6 +880,14 @@
                 let newBatchSeq = parseInt(batchSeq) + 1;
                 return this._writeBatchNo(newBatchSeq);
             }
+        },
+
+        _getErrorMsg: function(result) {
+            let errorMsg = _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]);
+            if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_READER_ERROR) {
+                errorMsg = errorMsg+'\n'+_('Error ' + result[ICERAPIResponse.KEY_READER_RESPONSE_CODE]);
+            }
+            return errorMsg;
         }
     };
 

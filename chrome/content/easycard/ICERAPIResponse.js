@@ -17,6 +17,7 @@ var ICERAPIResponse = {
 
     CODE_SUCCESS: "0",
     CODE_RETRY: "-125",
+    CODE_READER_ERROR: "-119",
 
     TXN_AMT_UNIT: 100,
 
