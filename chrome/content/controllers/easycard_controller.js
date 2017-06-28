@@ -614,7 +614,11 @@
                     //reset sequence every settlement
                     SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
                     //reset batch no when success settlement
-                    this._resetBatchNo();
+                    if (evt.data.closing) {
+                        this._resetBatchNo(true);
+                    } else {
+                        this._resetBatchNo();
+                    }
                     this._setCaption(_('Easycard transaction log upload success!'));
                     this.sleep(1000);
                     return;
@@ -865,31 +869,35 @@
         _getBatchNo: function() {
             let batchNo = null;
             let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
+            let batchDate = (new Date()).toString('yyMMdd');
             if (!prefBatchNo) {
-                batchNo = this._writeBatchNo();
+                batchNo = this._writeBatchNo(batchDate);
             } else {
                 batchNo = prefBatchNo;
             }
             return batchNo;
         },
 
-        _writeBatchNo: function(sequence) {
+        _writeBatchNo: function(batchDate, sequence) {
             if (!sequence) sequence = 0;
-            let batchNo = (new Date()).toString('yyMMdd') + GeckoJS.String.padLeft(sequence, 2, "0");
+            let batchNo = batchDate + GeckoJS.String.padLeft(sequence, 2, "0");
             GeckoJS.Configure.write(this._prefsPrefix+'.batchNo', batchNo);
             return batchNo;
         },
 
-        _resetBatchNo: function() {
+        _resetBatchNo: function(endOfDay) {
             let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
             let batchDate = prefBatchNo.substring(0,6);
             let batchSeq = prefBatchNo.slice(-2);
             let currentDate = (new Date()).toString('yyMMdd');
-            if (batchDate != currentDate) {
-                return this._writeBatchNo();
+            if (batchDate != currentDate && currentDate > batchDate) {
+                return this._writeBatchNo(currentDate);
+            } else if (endOfDay) {
+                let nextDate = new Date((new Date()).getTime() + 86400000).toString('yyMMdd');
+                return this._writeBatchNo(nextDate);
             } else {
                 let newBatchSeq = parseInt(batchSeq) + 1;
-                return this._writeBatchNo(newBatchSeq);
+                return this._writeBatchNo(batchDate, newBatchSeq);
             }
         },
 
