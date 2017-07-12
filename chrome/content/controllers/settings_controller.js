@@ -7,14 +7,17 @@
     const __controller__ = {
 
         name: 'EasycardSettings',
-        _icerAPIPath: '/home/icerapi/',
+        _scriptPath: '/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/',
 
         // initial SyncSettings
         initial: function(warn) {
             let settings = this.readSettings();
+            let iniObject = this.parseINIString(GREUtils.File.readAllBytes(this._scriptPath+'icer_ftp.ini').toString());
             if (settings == null) {
                 settings = {};
             }
+            settings.ftp_username = iniObject.ftp.ftp_username;
+            settings.ftp_password = iniObject.ftp.ftp_password;
             this.Form.unserializeFromObject('settingForm', settings);
         },
 
@@ -29,12 +32,66 @@
             GeckoJS.Configure.write('vivipos.fec.settings.easycard_payment', settings);
 
             try {
-                GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 5s ' + this._icerAPIPath + 'setcomport.sh' + ' ' + settings.comport], true);
+                //update ICERINI.xml
+                let actions = {
+                    'comport': 'setcomport',
+                    'sp_id': 'setspid',
+                    'location_id': 'setlocationid',
+                    'cmas_port': 'setcmasport',
+                };
+                for (let settingKey in settings) {
+                    if (-1 != GeckoJS.Array.inArray(settingKey, GeckoJS.BaseObject.getKeys(actions))) {
+                        let action = actions[settingKey];
+                        let settingValue = settings[settingKey];
+                        GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 5s ' + this._scriptPath + 'set_icerini.sh' + ' ' + action + ' ' + settingValue], true);
+                    }
+                }
+                //update ftp ini
+                let commands = 'cd '+this._scriptPath+'; ';
+                for (let settingKey in settings) {
+                    commands += 'sed -i "/^'+settingKey+'=/s/=.*/='+settings[settingKey]+'/" icer_ftp.ini; ';
+                }
+                GREUtils.File.run('/bin/sh', ['-c', commands ], true);
             } catch(e) {
                 this.log('ERROR', e);
             }
 
             return true;
+        },
+
+        parseINIString: function(data) {
+            let regex = {
+                section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
+                param: /^\s*([\w\.\-\_]+)\s*=\s*(.*?)\s*$/,
+                comment: /^\s*;.*$/
+            };
+            let value = {};
+            let lines = data.split(/\r\n|\r|\n/);
+            let section = null;
+
+            for(x=0;x<lines.length;x++)
+            {
+
+                if (regex.comment.test(lines[x])) {
+                    return;
+                } else if(regex.param.test(lines[x])) {
+                    var match = lines[x].match(regex.param);
+                    if(section){
+                        value[section][match[1]] = match[2];
+                    }else{
+                        value[match[1]] = match[2];
+                    }
+                } else if(regex.section.test(lines[x])) {
+                    var match = lines[x].match(regex.section);
+                    value[match[1]] = {};
+                    section = match[1];
+                } else if(line.length === 0 && section){
+                    section = null;
+                };
+
+            }
+
+            return value;
         },
 
         isAlphaNumeric: function(str) {
@@ -58,7 +115,7 @@
             if (data.changed) {
                 let topwin = GREUtils.XPCOM.getUsefulService("window-mediator").getMostRecentWindow(null);
                 if (GREUtils.Dialog.confirm(topwin, _('setting_confirm'),
-                        _('setting_confirm_str')
+                        _('Are you sure you want to save the changes?')
                     )) {
 
                     try {

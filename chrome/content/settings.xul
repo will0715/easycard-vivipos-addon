@@ -44,7 +44,7 @@
                                     <rows>
                                         <row>
                                             <vbox>
-                                                <label value="&settings.label.comPort;"/>
+                                                <label value="&settings.label.com_port;"/>
                                                 <!--support com port : /dev/ttyS0, /dev/ttyS1, /dev/ttyS4 -->
                                                 <menulist id="com_port" form="settingForm" name="comport">
                                                     <menupopup id="com_port_menupopup">
@@ -53,6 +53,30 @@
                                                         <menuitem label="COM 5" value="5"/>
                                                     </menupopup>
                                                 </menulist>
+                                            </vbox>
+                                            <vbox>
+                                                <label value="&settings.label.cmas_port;"/>
+                                                <textbox value="" form="settingForm" name="cmas_port"/>
+                                            </vbox>
+                                        </row>
+                                        <row>
+                                            <vbox>
+                                                <label value="&settings.label.sp_id;"/>
+                                                <textbox value="" form="settingForm" name="sp_id"/>
+                                            </vbox>
+                                            <vbox>
+                                                <label value="&settings.label.location_id;"/>
+                                                <textbox value="" form="settingForm" name="location_id"/>
+                                            </vbox>
+                                        </row>
+                                        <row>
+                                            <vbox>
+                                                <label value="&settings.label.ftp_username;"/>
+                                                <textbox value="" form="settingForm" name="ftp_username"/>
+                                            </vbox>
+                                            <vbox>
+                                                <label value="&settings.label.ftp_password;"/>
+                                                <textbox type="password" value="" form="settingForm" name="ftp_password"/>
                                             </vbox>
                                         </row>
                                     </rows>

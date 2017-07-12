@@ -1,2 +1,7 @@
 <!ENTITY settings.title "Configuration:">
-<!ENTITY settings.label.comPort "COM Port:">
+<!ENTITY settings.label.com_port "COM Port:">
+<!ENTITY settings.label.cmas_port "CMAS Port:">
+<!ENTITY settings.label.sp_id "Easycard SP ID:">
+<!ENTITY settings.label.location_id "Location Id:">
+<!ENTITY settings.label.ftp_username "FTP Username:">
+<!ENTITY settings.label.ftp_password "FTP Password:">
