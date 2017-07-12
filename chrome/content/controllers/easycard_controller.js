@@ -56,9 +56,10 @@
             this.initialDatabase();
 
             this.copyScripts();
-
-            //copy logrotate script to logrotate.d
-            GREUtils.File.copy(this._scriptPath+'vivipos_easycardlog', '/etc/logrotate.d/');
+            
+            if (!this.requiredSettingsCheck()) {
+                return;
+            }
 
             //startup sign on to get machine ready.
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
@@ -67,7 +68,9 @@
             } catch (e) {
                 this.log('DEBUG', e.message);
             } finally {
-                this._dialogPanel.close();
+                if (this._dialogPanel) {
+                    this._dialogPanel.close();
+                }
             }
         },
         // create required table from schema file.
@@ -108,9 +111,9 @@
          */
         copyScripts: function() {
             let flagInstallFile = GREUtils.File.chromeToPath('chrome://' + this.packageName + '/content/flags/first_install');
-            if (GREUtils.File.exists(flagInstallFile)) {
-                GREUtils.File.remove(flagInstallFile);
+            if (GREUtils.File.exists(flagInstallFile) || !GREUtils.File.exists(icerapiProgram)) {
                 try {
+                    GREUtils.File.remove(flagInstallFile);
                     GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
                 } catch (e) {
                     this.log('ERROR', e);
@@ -120,8 +123,22 @@
             let icerapiProgram = this._icerAPIPath+'icerapi';
 
             if (!GREUtils.File.exists(icerapiProgram)) {
-                alert(_('Failed to install easycard library, please contact technical support.'));
+                GREUtils.Dialog.alert(this.topmostWindow,
+                                  _('Installation Alert'),
+                                  _('Failed to install easycard library, please contact technical support.'));
             }
+        },
+
+        requiredSettingsCheck: function() {
+            let settings = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment');
+            if (!settings || typeof settings.sp_id === 'undefined' ||  typeof settings.cmas_port === 'undefined' ) {
+                GREUtils.Dialog.alert(this.topmostWindow,
+                                  _('Settings Check Alert'),
+                                  _('Please set up the required settings first'));
+                return false;
+            }
+
+            return true;
         },
 
         expireData: function(evt) {
@@ -183,6 +200,11 @@
          * @param {Boolean} receipt print mode, -1: no print 1: force print
          */
         easycardDeduct: function(receiptPrintMode) {
+            
+            if (!this.requiredSettingsCheck()) {
+                return;
+            }
+
             let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
             let currentTransaction = cart._getTransaction();
             let remainTotal = currentTransaction != null ? currentTransaction.getRemainTotal() : 0;
@@ -258,7 +280,9 @@
             } catch (e) {
                 this.log('ERROR', e);
             } finally {
-                waitPanel.hidePopup();
+                if (waitPanel) {
+                    waitPanel.hidePopup();
+                }
                 $.unblockUI();
             }
         },
@@ -340,6 +364,11 @@
          * cancel easycard transaction
          */
         easycardCancel: function() {
+            
+            if (!this.requiredSettingsCheck()) {
+                return;
+            }
+
             let cart = mainWindow.GeckoJS.Controller.getInstanceByName('Cart');
             let currentTransaction = cart._getTransaction();
             if (!currentTransaction) {
@@ -563,6 +592,11 @@
         },
 
         easycardQuery: function() {
+            
+            if (!this.requiredSettingsCheck()) {
+                return;
+            }
+
             $.blockUI({
                 "message": '<h3>' + _('Screen Lock') + '</h3>'
             });
@@ -587,7 +621,9 @@
             } catch (e) {
                 this.log('ERROR', e);
             } finally {
-                waitPanel.hidePopup();
+                if (waitPanel) {
+                    waitPanel.hidePopup();
+                }
                 $.unblockUI();
             }
         },
@@ -595,7 +631,9 @@
          * ICERAPI settlement
          */
         easycardSettlement: function(evt) {
-            alert(_('Please keep easycard device connected during shift change'));
+            GREUtils.Dialog.alert(this.topmostWindow,
+                                  _('Settlement Alert'),
+                                  _('Please keep easycard device connected during shift change'));
 
             $.blockUI({
                 "message": '<h3>' + _('Screen Lock') + '</h3>',
@@ -629,7 +667,9 @@
                 this.log('ERROR', e);
             } finally {
                 $.unblockUI();
-                this._dialogPanel.close();
+                if (this._dialogPanel) {
+                    this._dialogPanel.close();
+                }
             }
         },
         /**

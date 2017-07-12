@@ -4,6 +4,9 @@ scriptpath=$(dirname "$script")
 
 cd ${scriptpath}
 
+#copy logrotate script to logrotate.d
+cp -rf vivipos_easycardlog /etc/logrotate.d/
+
 #create easycard data directory
 mkdir -p /data/profile/log/easycard
 
