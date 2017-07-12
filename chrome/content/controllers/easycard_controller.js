@@ -56,6 +56,9 @@
             this.initialDatabase();
 
             this.copyScripts();
+
+            //update blacklist file
+            GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'update_icerblc.sh' ], false);
             
             if (!this.requiredSettingsCheck()) {
                 return;
