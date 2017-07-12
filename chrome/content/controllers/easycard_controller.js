@@ -4,10 +4,10 @@
         include('chrome://viviecr/content/controllers/app_controller.js');
     }
     if (typeof ICERAPIRequest === 'undefined') {
-        include('chrome://easycard_payment/content/easycard/ICERAPIRequest.js');
+        include('chrome://easycard_payment/content/easycard/ICERAPIRequest.jsc');
     }
     if (typeof ICERAPIResponse === 'undefined') {
-        include('chrome://easycard_payment/content/easycard/ICERAPIResponse.js');
+        include('chrome://easycard_payment/content/easycard/ICERAPIResponse.jsc');
     }
 
     include('chrome://easycard_payment/content/libs/xml2json.min.js');
