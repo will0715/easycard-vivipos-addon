@@ -655,12 +655,8 @@
                     //reset sequence every settlement
                     SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
                     //reset batch no when success settlement
-                    if (evt.data.closing) {
-                        this._resetBatchNo(true);
-                    } else {
-                        this._resetBatchNo();
-                    }
                     this._setCaption(_('Easycard transaction log upload success!'));
+                    this._resetBatchNo();
                     this.sleep(1000);
                     return;
                 }
@@ -928,16 +924,13 @@
             return batchNo;
         },
 
-        _resetBatchNo: function(endOfDay) {
+        _resetBatchNo: function() {
             let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
             let batchDate = prefBatchNo.substring(0,6);
             let batchSeq = prefBatchNo.slice(-2);
             let currentDate = (new Date()).toString('yyMMdd');
             if (batchDate != currentDate && currentDate > batchDate) {
                 return this._writeBatchNo(currentDate);
-            } else if (endOfDay) {
-                let nextDate = new Date((new Date()).getTime() + 86400000).toString('yyMMdd');
-                return this._writeBatchNo(nextDate);
             } else {
                 let newBatchSeq = parseInt(batchSeq) + 1;
                 return this._writeBatchNo(batchDate, newBatchSeq);
