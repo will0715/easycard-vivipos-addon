@@ -50,7 +50,6 @@
                                                     <menupopup id="com_port_menupopup">
                                                         <menuitem selected="true" label="COM 1" value="1"/>
                                                         <menuitem label="COM 2" value="2"/>
-                                                        <menuitem label="COM 5" value="5"/>
                                                     </menupopup>
                                                 </menulist>
                                             </vbox>
