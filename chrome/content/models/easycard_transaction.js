@@ -67,7 +67,7 @@
         getByOrderIdAndTxnType: function(orderId, txnType) {
             let terminalNo = GeckoJS.Session.get('terminal_no');
             let record = this.find('first', {
-                conditions: "easycard_transactions.order_id='"+orderId+"' AND easycard_transactions.transaction_type='"+txnType+"' AND easycard_transactions.terminal_no='"+terminalNo+"'",
+                conditions: "easycard_transactions.terminal_no='"+terminalNo+"' AND easycard_transactions.order_id='"+orderId+"' AND easycard_transactions.transaction_type='"+txnType+"'",
                 recursive: 0
             }) || null;
             return record;
@@ -81,7 +81,7 @@
             
             let terminalNo = GeckoJS.Session.get('terminal_no');
             let records = this.find('all', {
-                    conditions: "easycard_transactions.batch_no='"+batchNo+"' AND easycard_transactions.message_type = '"+messageType+"' AND easycard_transactions.terminal_no='"+terminalNo+"'",
+                    conditions: "easycard_transactions.terminal_no='"+terminalNo+"' AND easycard_transactions.batch_no='"+batchNo+"' AND easycard_transactions.message_type = '"+messageType+"'",
                     recursive: 0
             }) || null;
 
