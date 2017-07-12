@@ -1,0 +1,7 @@
+#!/bin/bash
+scriptpath=/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/
+
+cd $scriptpath
+
+#run backups
+./backups.sh
