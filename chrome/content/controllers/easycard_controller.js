@@ -69,7 +69,7 @@
             try {
                 this.easycardSignOn(true);
             } catch (e) {
-                this.log('DEBUG', e.message);
+                this.log('ERROR', '[easycard]Signon failed', e);
             } finally {
                 if (this._dialogPanel) {
                     this._dialogPanel.close();
@@ -281,7 +281,7 @@
                     this.sleep(2000);
                 }
             } catch (e) {
-                this.log('ERROR', e);
+                this.log('ERROR', '[easycard]Deduct failed', e);
             } finally {
                 if (waitPanel) {
                     waitPanel.hidePopup();
@@ -473,7 +473,7 @@
                     }
                 }
             } catch (e) {
-                this.log('Error', e.message);
+                this.log('ERROR', '[easycard]Refund failed', e);
                 evt.preventDefault();
             } finally {
                 if (waitPanel) {
@@ -584,7 +584,7 @@
                     }
                 }
             } catch (e) {
-                this.log('Error', e.message);
+                this.log('ERROR', '[easycard]Cancel failed', e);
                 evt.preventDefault();
             } finally {
                 if (waitPanel) {
@@ -622,7 +622,7 @@
                     this.sleep(1500);
                 }
             } catch (e) {
-                this.log('ERROR', e);
+                this.log('ERROR', '[easycard]Query failed', e);
             } finally {
                 if (waitPanel) {
                     waitPanel.hidePopup();
@@ -655,15 +655,15 @@
                     //reset sequence every settlement
                     SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
                     //reset batch no when success settlement
-                    this._setCaption(_('Easycard transaction log upload success!'));
                     this._resetBatchNo();
+                    this._dialogPanel = this._showDialog(_('Easycard transaction log upload success!'));
                     this.sleep(1000);
                     return;
                 }
-                this._setCaption(_('Easycard transaction log upload failed, please press the upload button at control panel'));
+                this._dialogPanel = this._showDialog(_('Easycard transaction log upload failed, please press the upload button at control panel'));
                 this.sleep(2000);
             } catch (e) {
-                this.log('ERROR', e);
+                this.log('ERROR', '[easycard]Settlement failed', e);
             } finally {
                 $.unblockUI();
                 if (this._dialogPanel) {
@@ -686,11 +686,11 @@
                 if (retry) {
                     return this.easycardSignOn();
                 }
-                this._setCaption(_('Easycard sign on failed, please check the device is connected to the POS, and then restart'));
+                this._dialogPanel = this._showDialog(_('Easycard sign on failed, please check the device is connected to the POS, and then restart'));
                 this.sleep(1500);
                 return false;
             }
-            this._setCaption(_('Easycard sign on success'));
+            this._dialogPanel = this._showDialog(_('Easycard sign on success'));
             this.sleep(1000);
             return true;
         },
@@ -805,7 +805,7 @@
                     }
                 }
             } catch (e) {
-                GeckoJS.BaseObject.log('ERROR', _('Failed to call ICERAPI (%S), request data: [%S].', [e, request]));
+                this.log('ERROR', _('Failed to call ICERAPI (%S), request data: [%S].', [e, request]));
             }
             return result;
         },
@@ -841,6 +841,10 @@
          */
         _showDialog: function(caption) {
 
+            if (this._dialogPanel) {
+                this._dialogPanel.close();
+            }
+
             let width = 600;
             let height = 140;
 
@@ -863,20 +867,10 @@
             let alertWin = GREUtils.Dialog.openWindow(win, aURL, aName,
                 aFeatures, aArguments);
 
-            this.sleep(500);
+            this.sleep(1500);
 
             return alertWin;
 
-        },
-        /**
-         * set dialog caption
-         * @param {String} caption
-         */
-        _setCaption: function(caption)
-        {
-            if (this._dialogPanel) {
-                this._dialogPanel.document.getElementById('dialog-caption').textContent = caption;
-            }
         },
         /**
          * show wait panel
