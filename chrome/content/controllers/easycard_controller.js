@@ -113,17 +113,18 @@
          * Note: icerapi cannot excute in long directory prefix
          */
         copyScripts: function() {
+            let icerapiProgram = this._icerAPIPath+'icerapi';
             let flagInstallFile = GREUtils.File.chromeToPath('chrome://' + this.packageName + '/content/flags/first_install');
             if (GREUtils.File.exists(flagInstallFile) || !GREUtils.File.exists(icerapiProgram)) {
                 try {
+                    //first time install, prefs should be clean
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment');
                     GREUtils.File.remove(flagInstallFile);
                     GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
                 } catch (e) {
-                    this.log('ERROR', e);
+                    this.log('ERROR', '[easycard]Copy scripts failed', e);
                 }
             }
-
-            let icerapiProgram = this._icerAPIPath+'icerapi';
 
             if (!GREUtils.File.exists(icerapiProgram)) {
                 GREUtils.Dialog.alert(this.topmostWindow,
