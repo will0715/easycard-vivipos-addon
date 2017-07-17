@@ -138,7 +138,7 @@
             if (!settings || typeof settings.sp_id === 'undefined' ||  typeof settings.cmas_port === 'undefined' ) {
                 GREUtils.Dialog.alert(this.topmostWindow,
                                   _('Settings Check Alert'),
-                                  _('Please set up the required settings first'));
+                                  _('Please set up the easycard required settings first'));
                 return false;
             }
 
@@ -252,7 +252,22 @@
                     let cardId = result[ICERAPIResponse.KEY_RECEIPT_CARD_ID];
                     let rrn = result[ICERAPIResponse.KEY_REFERENCE_NUM];
                     let memo = deviceId+'-'+cardId+'-'+rrn;
+                    let cardPhysicalId = result[ICERAPIResponse.KEY_CARD_PHYSICAL_ID];
+
+                    //clear carrier id
+                    GeckoJS.Session.set('einvoice_carriertype', '');
+                    GeckoJS.Session.set('einvoice_carrierid2', '');
+                    //set einvoice carrier information
+                    let einvoiceCarrierId = (typeof result[ICERAPIResponse.KEY_EINVOICE_CARRIER_ID] != 'undefined') ? result[ICERAPIResponse.KEY_EINVOICE_CARRIER_ID] : cardPhysicalId;
+                    if (einvoiceCarrierId) {
+                        GeckoJS.Session.set('einvoice_carriertype', 'easycard');
+                        GeckoJS.Session.set('einvoice_carrierid2', einvoiceCarrierId);
+                        currentTransaction.data.einvoice_carriertype = 'easycard'
+                        currentTransaction.data.einvoice_carrierid2 = einvoiceCarrierId;
+                    }
+
                     currentTransaction.data.easycard = {
+                        cardPhysicalId: cardPhysicalId,
                         cardId: cardId,
                         deviceId: deviceId,
                         rrn: rrn,
@@ -264,6 +279,7 @@
                         txnType: 'Deduct',
                         batchNo: batchNo
                     };
+
                     cart._addPayment('easycard', txnAmount, txnAmount, 'easycard', memo, false, false);
 
                     //save easycard transactin record
