@@ -70,8 +70,8 @@ fi
 encryptSDKJSBin="${NOW_PATH}/vivipos_sdk/encrypt-sdk-js"
 
 for needEncryptFile in "${tmpBuildXPIDir}/chrome/content/controllers/easycard_controller.js" \
-             "${tmpBuildXPIDir}/chrome/content/easycard/EDCRequest.js" \
-             "${tmpBuildXPIDir}/chrome/content/easycard/EDCResponse.js"
+             "${tmpBuildXPIDir}/chrome/content/easycard/ICERAPIRequest.js" \
+             "${tmpBuildXPIDir}/chrome/content/easycard/ICERAPIResponse.js"
 do
 
   EncryptedFile="${needEncryptFile}c"
