@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 
+<?xul-overlay href="chrome://easycard_payment/content/dialogs/linebreak_waiting_panel.xul" ?>
+
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" id="overlay">
     
     <script type="application/x-javascript" src="chrome://easycard_payment/content/overlay.js" />

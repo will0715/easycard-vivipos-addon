@@ -7,15 +7,17 @@
     const __controller__ = {
 
         name: 'EasycardSettings',
-        _scriptPath: "/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/",
-        _settingFile: "setting.ini",
+        _scriptPath: '/data/profile/extensions/easycard_payment@vivicloud.net/chrome/content/easycard/',
 
         // initial SyncSettings
         initial: function(warn) {
             let settings = this.readSettings();
+            let iniObject = this.parseINIString(GREUtils.File.readAllBytes(this._scriptPath+'icer_ftp.ini').toString());
             if (settings == null) {
                 settings = {};
             }
+            settings.ftp_username = iniObject.ftp.ftp_username;
+            settings.ftp_password = iniObject.ftp.ftp_password;
             this.Form.unserializeFromObject('settingForm', settings);
         },
 
@@ -25,20 +27,72 @@
             return settings;
         },
 
+        writeSettings: function(settings) {
+            if (!settings) return false;
+            GeckoJS.Configure.write('vivipos.fec.settings.easycard_payment', settings);
 
-        writeSettings: function(setting) {
-            if (!setting) return false;
-            GeckoJS.Configure.write('vivipos.fec.settings.easycard_payment', setting);
-
-            let writeSettingFile = new GeckoJS.File(this._scriptPath + this._settingFile, true);
-            settingParams = setting.comport;
-            writeSettingFile.open("vivi");
-            writeSettingFile.write(settingParams);
-            writeSettingFile.close();
+            try {
+                //update ICERINI.xml
+                let actions = {
+                    'comport': 'setcomport',
+                    'sp_id': 'setspid',
+                    'location_id': 'setlocationid',
+                    'cmas_port': 'setcmasport',
+                };
+                for (let settingKey in settings) {
+                    if (-1 != GeckoJS.Array.inArray(settingKey, GeckoJS.BaseObject.getKeys(actions))) {
+                        let action = actions[settingKey];
+                        let settingValue = settings[settingKey];
+                        GREUtils.File.run('/bin/bash', ['-c', '/usr/bin/timeout 5s ' + this._scriptPath + 'set_icerini.sh' + ' ' + action + ' ' + settingValue], true);
+                    }
+                }
+                //update ftp ini
+                let commands = 'cd '+this._scriptPath+'; ';
+                for (let settingKey in settings) {
+                    commands += 'sed -i "/^'+settingKey+'=/s/=.*/='+settings[settingKey]+'/" icer_ftp.ini; ';
+                }
+                GREUtils.File.run('/bin/sh', ['-c', commands ], true);
+            } catch(e) {
+                this.log('ERROR', e);
+            }
 
             return true;
         },
 
+        parseINIString: function(data) {
+            let regex = {
+                section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
+                param: /^\s*([\w\.\-\_]+)\s*=\s*(.*?)\s*$/,
+                comment: /^\s*;.*$/
+            };
+            let value = {};
+            let lines = data.split(/\r\n|\r|\n/);
+            let section = null;
+
+            for(x=0;x<lines.length;x++)
+            {
+
+                if (regex.comment.test(lines[x])) {
+                    return;
+                } else if(regex.param.test(lines[x])) {
+                    var match = lines[x].match(regex.param);
+                    if(section){
+                        value[section][match[1]] = match[2];
+                    }else{
+                        value[match[1]] = match[2];
+                    }
+                } else if(regex.section.test(lines[x])) {
+                    var match = lines[x].match(regex.section);
+                    value[match[1]] = {};
+                    section = match[1];
+                } else if(line.length === 0 && section){
+                    section = null;
+                };
+
+            }
+
+            return value;
+        },
 
         isAlphaNumeric: function(str) {
             let nonalphaRE = /[^a-zA-Z0-9]/;
@@ -61,7 +115,7 @@
             if (data.changed) {
                 let topwin = GREUtils.XPCOM.getUsefulService("window-mediator").getMostRecentWindow(null);
                 if (GREUtils.Dialog.confirm(topwin, _('setting_confirm'),
-                        _('setting_confirm_str')
+                        _('Are you sure you want to save the changes?')
                     )) {
 
                     try {
@@ -77,7 +131,7 @@
                     return false;
                 }
             } else {
-                NotifyUtils.warn(_('setting_not_saved'));
+                NotifyUtils.warn(_('Sorry, your changes could not be saved'));
             }
 
             return !data.cancel;
@@ -89,9 +143,9 @@
             this.Form.unserializeFromObject('settingForm', obj);
             let result = this.writeSettings(obj);
             if (result) {
-                OsdUtils.info(_('setting_saved'));
+                OsdUtils.info(_('Your changes have been saved'));
             } else {
-                NotifyUtils.warn(_('setting_not_saved'));
+                NotifyUtils.warn(_('Sorry, your changes could not be saved'));
             }
         },
 
@@ -106,9 +160,9 @@
                     prompts.BUTTON_POS_2 * prompts.BUTTON_TITLE_IS_STRING;
 
                 let action = prompts.confirmEx(this.topmostWindow,
-                    _('setting_exit'),
-                    _('setting_exit_ask'),
-                    flags, _('setting_save'), '', _('setting_descard'), null, check);
+                    _('Setting Confirmation'),
+                    _('Save your changes before exit?'),
+                    flags, _('Save'), '', _('Discard'), null, check);
                 if (action == 1) {
                     return;
                 } else if (action == 0) {

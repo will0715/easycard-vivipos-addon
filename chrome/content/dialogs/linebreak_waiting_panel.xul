@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE overlay SYSTEM "chrome://viviecr/locale/dialog.dtd">
+
+<overlay id="linebreak_waiting_panel"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+         xmlns:html="http://www.w3.org/1999/xhtml">
+
+    <popupset id="dialogs">
+        <vivipanel id="linebreak_waiting_panel" position="overlap" noautohide="true" class="container-dialog">
+                <hbox flex="1" pack="center" class="container-wait-panel">
+                    <vbox flex="1" class="container-main">
+                        <groupbox flex="1">
+                            <description id="linebreak_waiting_description" style="white-space: pre-wrap;" class="label-page-title">
+                            </description>
+                            <spacer style="height: 20px;"/>
+                        </groupbox>
+                    </vbox>
+                </hbox>
+        </vivipanel>
+    </popupset>
+    
+</overlay>
