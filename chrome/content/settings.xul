@@ -55,7 +55,7 @@
                                             </vbox>
                                             <vbox>
                                                 <label value="&settings.label.cmas_port;"/>
-                                                <textbox value="" form="settingForm" name="cmas_port"/>
+                                                <textbox value="7000" form="settingForm" name="cmas_port"/>
                                             </vbox>
                                         </row>
                                         <row>
