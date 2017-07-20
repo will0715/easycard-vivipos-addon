@@ -651,6 +651,10 @@
          * ICERAPI settlement
          */
         easycardSettlement: function(evt) {
+            if (!this.requiredSettingsCheck()) {
+                return;
+            }
+            
             GREUtils.Dialog.alert(this.topmostWindow,
                                   _('Settlement Alert'),
                                   _('Please keep easycard device connected during shift change'));
@@ -668,7 +672,7 @@
                 let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(batchNo, icerAPIRequest.MESSAGE_TYPE["request"]);
                 let request = icerAPIRequest.settlementRequest(hostSerialNum, transactionTotal.count, transactionTotal.total);
                 let result = this._callICERAPI(request);
-                if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_SUCCESS) {
+                if (result && result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_SUCCESS) {
                     //reset sequence every settlement
                     SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
                     //reset batch no when success settlement

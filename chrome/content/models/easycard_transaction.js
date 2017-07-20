@@ -28,6 +28,8 @@
 
             let data = {
                 terminal_no: GeckoJS.Session.get('terminal_no'),
+                sale_period: GeckoJS.Session.get('sale_period'),
+                shift_number: GeckoJS.Session.get('shift_number'),
                 batch_no: batchNo,
                 message_type: messageType,
                 transaction_type: transactionType,

@@ -49,7 +49,8 @@
                 //update ftp ini
                 let commands = 'cd '+this._scriptPath+'; ';
                 for (let settingKey in settings) {
-                    commands += 'sed -i "/^'+settingKey+'=/s/=.*/='+settings[settingKey]+'/" icer_ftp.ini; ';
+                    let settingValue = settings[settingKey].replace(/[/]/g, '\\/');
+                    commands += 'sed -i -r "s/^'+settingKey+'=.*/'+settingKey+'='+settingValue+'/" icer_ftp.ini; ';
                 }
                 GREUtils.File.run('/bin/sh', ['-c', commands ], true);
             } catch(e) {
