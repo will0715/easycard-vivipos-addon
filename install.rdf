@@ -4,7 +4,7 @@
     <Description about="urn:mozilla:install-manifest">
         <em:id>easycard_payment@vivicloud.net</em:id>
         <em:name>VIVIPOS 悠遊卡支付插件</em:name>
-        <em:version>1.0.20160713120000</em:version>
+        <em:version>1.0.0</em:version>
         <em:description></em:description>
         <em:creator>VIVIPOS SDK</em:creator>
         <em:homepageURL>http://www.vivipos.com.tw/</em:homepageURL>

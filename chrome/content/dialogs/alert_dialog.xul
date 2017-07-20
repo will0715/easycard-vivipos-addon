@@ -22,8 +22,8 @@
         <vbox flex="1" class="container-main">
 
             <vbox flex="1" id="dialogBox" hidden="false">
-                <label id="dialog-caption" value=""
-                    class="label-page-title" />
+                <description id="dialog-caption" style="white-space: pre-wrap;" class="label-page-title">
+                </description>
                 <spacer style="height: 20px;" />
             </vbox>
 
