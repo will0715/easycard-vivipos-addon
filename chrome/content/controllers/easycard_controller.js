@@ -59,6 +59,7 @@
 
             //update blacklist file
             GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'update_icerblc.sh' ], false);
+            this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
             
             if (!this.requiredSettingsCheck()) {
                 return;
@@ -746,7 +747,7 @@
 
             let enabledDevices = deviceController.getEnabledDevices('receipt', printer);
             if (enabledDevices != null) {
-                let template = 'easycard-receipt';
+                let template = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt') || 'easycard-receipt-58';
                 let port = enabledDevices[0].port;
                 let portspeed = enabledDevices[0].portspeed;
                 let handshaking = enabledDevices[0].handshaking;
