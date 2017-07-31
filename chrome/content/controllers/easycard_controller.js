@@ -57,8 +57,6 @@
 
             this.copyScripts();
 
-            //update blacklist file
-            GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'update_icerblc.sh' ], false);
             this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
             
             if (!this.requiredSettingsCheck()) {
@@ -69,6 +67,14 @@
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
             try {
                 this.easycardSignOn(true);
+
+                //update blacklist file
+                if (!this.updateICERblc()) {
+                    GREUtils.Dialog.alert(this.topmostWindow,
+                                  _('Settings Check Alert'),
+                                  _('Download easycard blacklist file failed, please check your ftp information'));
+                    this.sleep(500);
+                }
             } catch (e) {
                 this.log('ERROR', '[easycard]Signon failed', e);
             } finally {
@@ -108,6 +114,12 @@
 
             return true;
 
+        },
+
+        updateICERblc: function() {
+            GREUtils.File.run('/bin/sh', ['-c',  '/usr/bin/timeout 30s ' + this._scriptPath + 'update_icerblc.sh' ], true);
+            let result = GREUtils.File.readAllLine("/tmp/easycard_blc_uptodate");
+            return (result == 1);
         },
         /**
          * copy icerapi scripts to home directory
