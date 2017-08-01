@@ -75,6 +75,18 @@
                                   _('Download easycard blacklist file failed, please check your ftp information'));
                     this.sleep(500);
                 }
+
+                //reset batch no if batch no is expired and there is no transaction belongs to current batch no
+                let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
+                let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(prefBatchNo, (new ICERAPIRequest()).MESSAGE_TYPE["request"]);
+                let batchDate = prefBatchNo.substring(0,6);
+                let batchSeq = prefBatchNo.slice(-2);
+                let currentDate = (new Date()).toString('yyMMdd');
+                if (batchDate != currentDate && currentDate > batchDate) {
+                    if (transactionTotal && transactionTotal.count == 0) {
+                        this._resetBatchNo();
+                    }
+                }
             } catch (e) {
                 this.log('ERROR', '[easycard]Signon failed', e);
             } finally {
@@ -131,7 +143,11 @@
             if (GREUtils.File.exists(flagInstallFile) || !GREUtils.File.exists(icerapiProgram)) {
                 try {
                     //first time install, prefs should be clean
-                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.cmas_port');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.sp_id');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.location_id');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.ftp_username');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.ftp_password');
                     GREUtils.File.remove(flagInstallFile);
                     GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
                 } catch (e) {
@@ -305,7 +321,7 @@
                             this.printReceipt(currentTransaction, this._receiptPrinter, false, true);
                         }
                     }
-                    this.sleep(1500);
+                    this.sleep(1000);
                 } else {
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
                     this.sleep(2000);
@@ -901,7 +917,7 @@
             let alertWin = GREUtils.Dialog.openWindow(win, aURL, aName,
                 aFeatures, aArguments);
 
-            this.sleep(1500);
+            this.sleep(1000);
 
             return alertWin;
 
