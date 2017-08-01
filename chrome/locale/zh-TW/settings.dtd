@@ -5,3 +5,6 @@
 <!ENTITY settings.label.location_id "悠遊卡Location Id:">
 <!ENTITY settings.label.ftp_username "FTP 帳號:">
 <!ENTITY settings.label.ftp_password "FTP 密碼:">
+<!ENTITY settings.label.template_58 "悠遊卡收據(58mm)">
+<!ENTITY settings.label.template_58_center "悠遊卡收據(58mm置中)">
+<!ENTITY settings.label.template_80 "悠遊卡收據(80mm)">

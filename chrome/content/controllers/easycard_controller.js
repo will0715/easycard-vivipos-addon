@@ -57,8 +57,7 @@
 
             this.copyScripts();
 
-            //update blacklist file
-            GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'update_icerblc.sh' ], false);
+            this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
             
             if (!this.requiredSettingsCheck()) {
                 return;
@@ -68,6 +67,26 @@
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
             try {
                 this.easycardSignOn(true);
+
+                //update blacklist file
+                if (!this.updateICERblc()) {
+                    GREUtils.Dialog.alert(this.topmostWindow,
+                                  _('Settings Check Alert'),
+                                  _('Download easycard blacklist file failed, please check your ftp information'));
+                    this.sleep(500);
+                }
+
+                //reset batch no if batch no is expired and there is no transaction belongs to current batch no
+                let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
+                let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(prefBatchNo, (new ICERAPIRequest()).MESSAGE_TYPE["request"]);
+                let batchDate = prefBatchNo.substring(0,6);
+                let batchSeq = prefBatchNo.slice(-2);
+                let currentDate = (new Date()).toString('yyMMdd');
+                if (batchDate != currentDate && currentDate > batchDate) {
+                    if (transactionTotal && transactionTotal.count == 0) {
+                        this._resetBatchNo();
+                    }
+                }
             } catch (e) {
                 this.log('ERROR', '[easycard]Signon failed', e);
             } finally {
@@ -108,6 +127,12 @@
             return true;
 
         },
+
+        updateICERblc: function() {
+            GREUtils.File.run('/bin/sh', ['-c',  '/usr/bin/timeout 30s ' + this._scriptPath + 'update_icerblc.sh' ], true);
+            let result = GREUtils.File.readAllLine("/tmp/easycard_blc_uptodate");
+            return (result == 1);
+        },
         /**
          * copy icerapi scripts to home directory
          * Note: icerapi cannot excute in long directory prefix
@@ -118,7 +143,11 @@
             if (GREUtils.File.exists(flagInstallFile) || !GREUtils.File.exists(icerapiProgram)) {
                 try {
                     //first time install, prefs should be clean
-                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.cmas_port');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.sp_id');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.location_id');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.ftp_username');
+                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.ftp_password');
                     GREUtils.File.remove(flagInstallFile);
                     GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
                 } catch (e) {
@@ -292,7 +321,7 @@
                             this.printReceipt(currentTransaction, this._receiptPrinter, false, true);
                         }
                     }
-                    this.sleep(1500);
+                    this.sleep(1000);
                 } else {
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
                     this.sleep(2000);
@@ -746,7 +775,7 @@
 
             let enabledDevices = deviceController.getEnabledDevices('receipt', printer);
             if (enabledDevices != null) {
-                let template = 'easycard-receipt';
+                let template = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt') || 'easycard-receipt-58';
                 let port = enabledDevices[0].port;
                 let portspeed = enabledDevices[0].portspeed;
                 let handshaking = enabledDevices[0].handshaking;
@@ -888,7 +917,7 @@
             let alertWin = GREUtils.Dialog.openWindow(win, aURL, aName,
                 aFeatures, aArguments);
 
-            this.sleep(1500);
+            this.sleep(1000);
 
             return alertWin;
 

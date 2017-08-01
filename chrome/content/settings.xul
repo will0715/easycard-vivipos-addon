@@ -4,6 +4,8 @@
     %Dialog;
     <!ENTITY % Settings SYSTEM "chrome://easycard_payment/locale/settings.dtd">
     %Settings;
+    <!ENTITY % Devices SYSTEM "chrome://viviecr/locale/devices.dtd">
+    %Devices;
     ]>
     <?xml-stylesheet href="chrome://vivipos/skin/" type="text/css"?>
     <?xml-stylesheet href="chrome://viviecr/skin/common/viviecr.css" type="text/css"?>
@@ -76,6 +78,27 @@
                                             <vbox>
                                                 <label value="&settings.label.ftp_password;"/>
                                                 <textbox type="password" value="" form="settingForm" name="ftp_password"/>
+                                            </vbox>
+                                        </row>
+                                        <row>
+                                            <vbox>
+                                                <label value="&devices.receipt.printer.label;"/>
+                                                <menulist id="easycard-receipt-device" form="settingForm" name="easycard-receipt-device">
+                                                <menupopup id="easycard-receipt-device-popup">
+                                                        <menuitem selected="true" label="&devices.receipt.printer.label; 1" value="1"/>
+                                                        <menuitem label="&devices.receipt.printer.label; 2" value="2"/>
+                                                </menupopup>
+                                                </menulist>
+                                            </vbox>
+                                            <vbox>
+                                                <label value="&devices.template.label;"/>
+                                                <menulist id="easycard-receipt" form="settingForm" name="easycard-receipt">
+                                                <menupopup id="easycard-receipt-popup">
+                                                        <menuitem selected="true" label="&settings.label.template_80;" value="easycard-receipt-80"/>
+                                                        <menuitem label="&settings.label.template_58;" value="easycard-receipt-58"/>
+                                                        <menuitem label="&settings.label.template_58_center;" value="easycard-receipt-58-center"/>
+                                                </menupopup>
+                                                </menulist>
                                             </vbox>
                                         </row>
                                     </rows>
