@@ -5,6 +5,8 @@
 <!ENTITY settings.label.location_id "Location Id:">
 <!ENTITY settings.label.ftp_username "FTP Username:">
 <!ENTITY settings.label.ftp_password "FTP Password:">
+<!ENTITY settings.label.printer "Receipt Printer:">
+<!ENTITY settings.label.template "Receipt Template:">
 <!ENTITY settings.label.template_58 "Easycard receipt(58mm)">
 <!ENTITY settings.label.template_58_center "Easycard receipt(58mm center)">
 <!ENTITY settings.label.template_80 "Easycard receipt(80mm)">
