@@ -19,15 +19,14 @@
     <script type="application/x-javascript" src="chrome://easycard_payment/content/dialogs/alert_dialog.js" />
 
     <vbox flex="1" class="container-dialog container-wait-dialog">
-        <vbox flex="1" class="container-main">
-
             <vbox flex="1" id="dialogBox" hidden="false">
-                <description id="dialog-caption" style="white-space: pre-wrap;" class="label-page-title">
-                </description>
-                <spacer style="height: 20px;" />
+                    <vbox flex="1" class="container-main">
+                        <description id="dialog-caption" style="white-space: pre-wrap;" class="label-page-title">
+                        </description>
+                        <spacer style="height: 5px;" />
+                    </vbox>
             </vbox>
 
-        </vbox>
     </vbox>
 
 </window>

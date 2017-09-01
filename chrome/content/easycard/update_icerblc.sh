@@ -23,6 +23,15 @@ find ${icerapipath}/BLC* -mtime +3 -exec rm {} \;
 downloadblc=$(lftp -c "set ssl:verify-certificate no;open ftps://cmas-ftp.easycard.com.tw;user ${ftp_username} ${ftp_password};mirror ftpblc ${icerapipath};quit;" 2>&1)
 latest_file=$(ls -tr | grep ".BIG$" | tail -n 1)
 
+blc_count=$(find ./BLC* | wc -l)
+blc_uptodate_file="/tmp/easycard_blc_uptodate"
+
+if [ "$blc_count" -gt "1" ]; then
+    echo 1 > ${blc_uptodate_file}
+else
+    echo 0 > ${blc_uptodate_file}
+fi
+
 #change work directory to script path
 cd ${scriptpath}
 

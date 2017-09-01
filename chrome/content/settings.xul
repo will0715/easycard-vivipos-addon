@@ -23,6 +23,7 @@
         <script type="application/x-javascript" src="chrome://vivipos/content/init_geckojs.js"/>
 
         <!-- include controller -->
+        <script src="chrome://easycard_payment/content/settings.js" type="application/x-javascript"/>
         <script src="chrome://easycard_payment/content/controllers/settings_controller.js" type="application/x-javascript"/>
 
         <keyset id="keyset_extensions">
@@ -75,18 +76,50 @@
                                             </vbox>
                                             <vbox>
                                                 <label value="&settings.label.ftp_password;"/>
-                                                <textbox type="password" value="" form="settingForm" name="ftp_password"/>
+                                                <textbox value="" form="settingForm" name="ftp_password"/>
+                                            </vbox>
+                                        </row>
+                                        <row>
+                                            <vbox>
+                                                <label value="&settings.label.printer;"/>
+                                                <menulist id="easycard-receipt-device" form="settingForm" name="easycard-receipt-device">
+                                                <menupopup id="easycard-receipt-device-popup">
+                                                        <menuitem selected="true" label="&settings.label.printer; 1" value="1"/>
+                                                        <menuitem label="&settings.label.printer; 2" value="2"/>
+                                                </menupopup>
+                                                </menulist>
+                                            </vbox>
+                                            <vbox>
+                                                <label value="&settings.label.template;"/>
+                                                <menulist id="easycard-receipt" form="settingForm" name="easycard-receipt">
+                                                <menupopup id="easycard-receipt-popup">
+                                                        <menuitem selected="true" label="&settings.label.template_80;" value="easycard-receipt-80"/>
+                                                        <menuitem label="&settings.label.template_58;" value="easycard-receipt-58"/>
+                                                        <menuitem label="&settings.label.template_58_center;" value="easycard-receipt-58-center"/>
+                                                </menupopup>
+                                                </menulist>
+                                            </vbox>
+                                        </row>
+                                        <row>
+                                            <vbox>
+                                                <label value="&settings.label.batch_no;"/>
+                                                <textbox value="" readonly="true" form="settingForm" name="batchNo"/>
                                             </vbox>
                                         </row>
                                     </rows>
                                 </grid>
                             </vbox>
                 <spacer flex="1" />
-                <hbox id="dialogButtons" class="exitbar">
-                    <button id="save" default="true" class="button-save" oncommand="$do('save', null, 'EasycardSettings');"/>
-                    <spacer flex="1"/>
-                    <button id="vkb" class="button-vkb" oncommand="VirtualKeyboard.toggle();"/>
-                    <button id="close" default="false" class="button-exit" oncommand="$do('exit', null, 'EasycardSettings');"/>
+                <hbox>
+                    <hbox class="toolbar" flex="1" toolbarmode="horizontal">
+                        <button id="btn-upload-settlement" label="&settings.label.button_settlement;" class="button-execute" oncommand="$do('easycardSettlement', {manual: true}, 'EasycardPayment');"/>
+                    </hbox>
+                    <hbox id="dialogButtons" pack="end" class="exitbar">
+                        <button id="save" default="true" class="button-save" oncommand="$do('save', null, 'EasycardSettings');"/>
+                        <spacer flex="1"/>
+                        <button id="vkb" class="button-vkb" oncommand="VirtualKeyboard.toggle();"/>
+                        <button id="close" default="false" class="button-exit" oncommand="$do('exit', null, 'EasycardSettings');"/>
+                    </hbox>
                 </hbox>
 
             </vbox>
