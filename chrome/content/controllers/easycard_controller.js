@@ -35,6 +35,12 @@
         _prefsPrefix: 'vivipos.fec.settings.easycard_payment',
 
         initial: function() {
+            
+            //return if service is not activated
+            if (!this.isServiceActivated()) {
+                return;
+            }
+
             if (!this._cartController) {
                 this._cartController = GeckoJS.Controller.getInstanceByName('Cart');
                 if (extItem && extItem.version.indexOf('1.3.3') != -1) {
@@ -57,12 +63,13 @@
 
             this.copyScripts();
 
-            this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
-            
+            //return if required settings is not configured
             if (!this.requiredSettingsCheck()) {
                 return;
             }
 
+            this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
+            
             //startup sign on to get machine ready.
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
             try {
@@ -164,7 +171,11 @@
 
         requiredSettingsCheck: function() {
             let settings = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment');
-            if (!settings || typeof settings.sp_id === 'undefined' ||  typeof settings.cmas_port === 'undefined' ) {
+            if (!settings || typeof settings.sp_id === 'undefined' ||  
+                typeof settings.location_id === 'undefined' ||  
+                typeof settings.cmas_port === 'undefined' || 
+                settings.sp_id == "" || 
+                settings.location_id == "" ) {
                 GREUtils.Dialog.alert(this.topmostWindow,
                                   _('Settings Check Alert'),
                                   _('Please set up the easycard required settings first'));
@@ -233,8 +244,8 @@
          * @param {Boolean} receipt print mode, -1: no print 1: force print
          */
         easycardDeduct: function(receiptPrintMode) {
-            
-            if (!this.requiredSettingsCheck()) {
+
+            if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
                 return;
             }
 
@@ -414,7 +425,7 @@
          */
         easycardCancel: function() {
             
-            if (!this.requiredSettingsCheck()) {
+            if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
                 return;
             }
 
@@ -642,7 +653,7 @@
 
         easycardQuery: function() {
             
-            if (!this.requiredSettingsCheck()) {
+            if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
                 return;
             }
 
@@ -680,7 +691,7 @@
          * ICERAPI settlement
          */
         easycardSettlement: function(evt) {
-            if (!this.requiredSettingsCheck()) {
+            if (!this.requiredSettingsCheck() ) {
                 return;
             }
             
@@ -987,6 +998,22 @@
                 errorMsg = errorMsg+'\n'+_('Error ' + result[ICERAPIResponse.KEY_READER_RESPONSE_CODE]);
             }
             return errorMsg;
+        },
+
+        isServiceActivated: function() {
+            //check service activation
+            if (!VivilicenseService.checkService('easycard', {
+                sp_id: GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.sp_id'),
+                location_id: GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.location_id')
+            })) {
+                GREUtils.Dialog.alert(this.topmostWindow,
+                    _('Expiration Warning'),
+                    _('service is not activated or expired, please contact your dealer for help', [_('(service)easycard')])
+                    );
+                return false;
+            }
+
+            return true;
         }
     };
 
