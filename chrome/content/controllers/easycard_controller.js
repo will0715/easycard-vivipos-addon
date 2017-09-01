@@ -97,6 +97,12 @@
                 if (batchDate != currentDate && currentDate > batchDate) {
                     if (transactionTotal && transactionTotal.count == 0) {
                         this._resetBatchNo();
+                    } else {
+                        if (GREUtils.Dialog.confirm(this.topmostWindow,
+                            _('Settlement Alert'),
+                            _('Easycard transaction log is not uploaded, do you want to do it now?', [batchDate]))) {
+                            this.easycardSettlement();
+                        }
                     }
                 }
             } catch (e) {
@@ -760,7 +766,9 @@
                 if (retry) {
                     return this.easycardSignOn();
                 }
-                this._dialogPanel = this._showDialog(_('Easycard sign on failed, please check the device is connected to the POS, and then restart'));
+                let errorMsg = _('Easycard sign on failed, please check the device is connected to the POS, and then restart');
+                errorMsg = errorMsg +'\n' + this._getErrorMsg(result);
+                this._dialogPanel = this._showDialog(errorMsg);
                 this.sleep(1500);
                 return false;
             }
@@ -1006,9 +1014,13 @@
         },
 
         _getErrorMsg: function(result) {
+            if (!result) return '';
             let errorMsg = _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]);
             if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_READER_ERROR) {
                 errorMsg = errorMsg+'\n'+_('Error ' + result[ICERAPIResponse.KEY_READER_RESPONSE_CODE]);
+            }
+            if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_ICER_ERROR) {
+                errorMsg = _('Error 3900 ' + result[ICERAPIResponse.KEY_RESPONSE_CODE]);
             }
             return errorMsg;
         },
