@@ -412,10 +412,17 @@
                 GeckoJS.Session.set('easycard.payment.cancel', false);
                 if ((new Date()).getTime() - cancelTime < 30000) {
                     return this.processCancel(evt);
-                } else if (GREUtils.Dialog.confirm(this.topmostWindow, _('Are you sure to cancel? Press the Cancel button to do refund'), _('Are you sure to cancel? Press the Cancel button to do refund'))) {
-                    return this.processCancel(evt);
+                } else {
+                    //stop if last cancel operation is not completed
+                    GREUtils.Dialog.alert(this.topmostWindow, 
+                        _('Warning'), 
+                        _('The last cancel operation is not completed, please try again'));
+
+                    evt.preventDefault();
+                    return;
                 }
             }
+
             return this.processRefund(evt);
         },
 
@@ -425,10 +432,17 @@
                 GeckoJS.Session.set('easycard.payment.cancel', false);
                 if ((new Date()).getTime() - cancelTime < 30000) {
                     return this.processCancel(evt, 'old');
-                } else if (GREUtils.Dialog.confirm(this.topmostWindow, _('Are you sure to cancel? Press the Cancel button to do refund'), _('Are you sure to cancel? Press the Cancel button to do refund'))) {
-                    return this.processCancel(evt, 'old');
+                } else {
+                    //stop if last cancel operation is not completed
+                    GREUtils.Dialog.alert(this.topmostWindow, 
+                        _('Warning'), 
+                        _('The last cancel operation is not completed, please try again'));
+
+                    evt.preventDefault();
+                    return;
                 }
             }
+
             return this.processRefund(evt, 'old');
         },
         /**
