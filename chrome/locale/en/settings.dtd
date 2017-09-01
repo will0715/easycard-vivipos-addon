@@ -10,3 +10,5 @@
 <!ENTITY settings.label.template_58 "Easycard receipt(58mm)">
 <!ENTITY settings.label.template_58_center "Easycard receipt(58mm center)">
 <!ENTITY settings.label.template_80 "Easycard receipt(80mm)">
+<!ENTITY settings.label.button_settlement "Manaul Settlement">
+<!ENTITY settings.label.batch_no "Current Batch Number:">
