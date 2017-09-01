@@ -59,7 +59,7 @@ else
 fi
 
 cd ${tmpBuildXPIDir} &&
-cp ${NOW_PATH}/chrome.manifest ${NOW_PATH}/install.rdf ${tmpBuildXPIDir}/ 
+cp ${NOW_PATH}/chrome.manifest ${NOW_PATH}/irc_manifest.xml ${NOW_PATH}/install.rdf ${tmpBuildXPIDir}/ 
 cp -r ${NOW_PATH}/chrome ${tmpBuildXPIDir}/ &&
 cp -r ${NOW_PATH}/defaults ${tmpBuildXPIDir}/ 
 
@@ -85,7 +85,7 @@ do
 
 done
 
-zip -r ${filename} chrome.manifest install.rdf chrome/ defaults/
+zip -r ${filename} chrome.manifest irc_manifest.xml install.rdf chrome/ defaults/
 mv ${filename} ../
 
 

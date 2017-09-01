@@ -9,9 +9,14 @@
     if (typeof ICERAPIResponse === 'undefined') {
         include('chrome://easycard_payment/content/easycard/ICERAPIResponse.jsc');
     }
+    if (typeof SequenceModel === 'undefined') {
+        include('chrome://viviecr/content/models/sequence.js');
+    }
+    if (typeof EasycardTransaction === 'undefined') {
+        include('chrome://easycard_payment/content/models/easycard_transaction.js');
+    }
 
     include('chrome://easycard_payment/content/libs/xml2json.min.js');
-    include('chrome://easycard_payment/content/models/easycard_transaction.js');
 
     var mainWindow = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("Vivipos:Main");
     var extMgr = Components.classes["@mozilla.org/extensions/manager;1"].getService(Components.interfaces.nsIExtensionManager);
@@ -35,6 +40,12 @@
         _prefsPrefix: 'vivipos.fec.settings.easycard_payment',
 
         initial: function() {
+            
+            //return if service is not activated
+            if (!this.isServiceActivated()) {
+                return;
+            }
+
             if (!this._cartController) {
                 this._cartController = GeckoJS.Controller.getInstanceByName('Cart');
                 if (extItem && extItem.version.indexOf('1.3.3') != -1) {
@@ -57,12 +68,13 @@
 
             this.copyScripts();
 
-            this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
-            
+            //return if required settings is not configured
             if (!this.requiredSettingsCheck()) {
                 return;
             }
 
+            this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
+            
             //startup sign on to get machine ready.
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
             try {
@@ -85,6 +97,12 @@
                 if (batchDate != currentDate && currentDate > batchDate) {
                     if (transactionTotal && transactionTotal.count == 0) {
                         this._resetBatchNo();
+                    } else {
+                        if (GREUtils.Dialog.confirm(this.topmostWindow,
+                            _('Settlement Alert'),
+                            _('Easycard transaction log is not uploaded, do you want to do it now?', [batchDate]))) {
+                            this.easycardSettlement();
+                        }
                     }
                 }
             } catch (e) {
@@ -164,7 +182,11 @@
 
         requiredSettingsCheck: function() {
             let settings = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment');
-            if (!settings || typeof settings.sp_id === 'undefined' ||  typeof settings.cmas_port === 'undefined' ) {
+            if (!settings || typeof settings.sp_id === 'undefined' ||  
+                typeof settings.location_id === 'undefined' ||  
+                typeof settings.cmas_port === 'undefined' || 
+                settings.sp_id == "" || 
+                settings.location_id == "" ) {
                 GREUtils.Dialog.alert(this.topmostWindow,
                                   _('Settings Check Alert'),
                                   _('Please set up the easycard required settings first'));
@@ -233,8 +255,8 @@
          * @param {Boolean} receipt print mode, -1: no print 1: force print
          */
         easycardDeduct: function(receiptPrintMode) {
-            
-            if (!this.requiredSettingsCheck()) {
+
+            if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
                 return;
             }
 
@@ -291,7 +313,7 @@
                     if (einvoiceCarrierId) {
                         GeckoJS.Session.set('einvoice_carriertype', 'easycard');
                         GeckoJS.Session.set('einvoice_carrierid2', einvoiceCarrierId);
-                        currentTransaction.data.einvoice_carriertype = 'easycard'
+                        currentTransaction.data.einvoice_carriertype = 'easycard';
                         currentTransaction.data.einvoice_carrierid2 = einvoiceCarrierId;
                     }
 
@@ -390,10 +412,17 @@
                 GeckoJS.Session.set('easycard.payment.cancel', false);
                 if ((new Date()).getTime() - cancelTime < 30000) {
                     return this.processCancel(evt);
-                } else if (GREUtils.Dialog.confirm(this.topmostWindow, _('Are you sure to cancel? Press the Cancel button to do refund'), _('Are you sure to cancel? Press the Cancel button to do refund'))) {
-                    return this.processCancel(evt);
+                } else {
+                    //stop if last cancel operation is not completed
+                    GREUtils.Dialog.alert(this.topmostWindow, 
+                        _('Warning'), 
+                        _('The last cancel operation is not completed, please try again'));
+
+                    evt.preventDefault();
+                    return;
                 }
             }
+
             return this.processRefund(evt);
         },
 
@@ -403,10 +432,17 @@
                 GeckoJS.Session.set('easycard.payment.cancel', false);
                 if ((new Date()).getTime() - cancelTime < 30000) {
                     return this.processCancel(evt, 'old');
-                } else if (GREUtils.Dialog.confirm(this.topmostWindow, _('Are you sure to cancel? Press the Cancel button to do refund'), _('Are you sure to cancel? Press the Cancel button to do refund'))) {
-                    return this.processCancel(evt, 'old');
+                } else {
+                    //stop if last cancel operation is not completed
+                    GREUtils.Dialog.alert(this.topmostWindow, 
+                        _('Warning'), 
+                        _('The last cancel operation is not completed, please try again'));
+
+                    evt.preventDefault();
+                    return;
                 }
             }
+
             return this.processRefund(evt, 'old');
         },
         /**
@@ -414,7 +450,7 @@
          */
         easycardCancel: function() {
             
-            if (!this.requiredSettingsCheck()) {
+            if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
                 return;
             }
 
@@ -642,7 +678,7 @@
 
         easycardQuery: function() {
             
-            if (!this.requiredSettingsCheck()) {
+            if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
                 return;
             }
 
@@ -680,8 +716,16 @@
          * ICERAPI settlement
          */
         easycardSettlement: function(evt) {
-            if (!this.requiredSettingsCheck()) {
+            if (!this.requiredSettingsCheck() ) {
                 return;
+            }
+            
+            if (evt && evt.manual) {
+                if (!GREUtils.Dialog.confirm(this.topmostWindow,
+                                  _('Settlement Alert'),
+                                  _('Are you sure to upload transaction log manaully?'))) {
+                    return;
+                }
             }
             
             GREUtils.Dialog.alert(this.topmostWindow,
@@ -736,7 +780,9 @@
                 if (retry) {
                     return this.easycardSignOn();
                 }
-                this._dialogPanel = this._showDialog(_('Easycard sign on failed, please check the device is connected to the POS, and then restart'));
+                let errorMsg = _('Easycard sign on failed, please check the device is connected to the POS, and then restart');
+                errorMsg = errorMsg +'\n' + this._getErrorMsg(result);
+                this._dialogPanel = this._showDialog(errorMsg);
                 this.sleep(1500);
                 return false;
             }
@@ -982,11 +1028,31 @@
         },
 
         _getErrorMsg: function(result) {
+            if (!result) return '';
             let errorMsg = _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]);
             if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_READER_ERROR) {
                 errorMsg = errorMsg+'\n'+_('Error ' + result[ICERAPIResponse.KEY_READER_RESPONSE_CODE]);
             }
+            if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_ICER_ERROR) {
+                errorMsg = _('Error 3900 ' + result[ICERAPIResponse.KEY_RESPONSE_CODE]);
+            }
             return errorMsg;
+        },
+
+        isServiceActivated: function() {
+            //check service activation
+            if (!VivilicenseService.checkService('easycard', {
+                sp_id: GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.sp_id'),
+                location_id: GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.location_id')
+            })) {
+                GREUtils.Dialog.alert(this.topmostWindow,
+                    _('Expiration Warning'),
+                    _('service is not activated or expired, please contact your dealer for help', [_('(service)easycard')])
+                    );
+                return false;
+            }
+
+            return true;
         }
     };
 
