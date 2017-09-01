@@ -313,7 +313,7 @@
                     if (einvoiceCarrierId) {
                         GeckoJS.Session.set('einvoice_carriertype', 'easycard');
                         GeckoJS.Session.set('einvoice_carrierid2', einvoiceCarrierId);
-                        currentTransaction.data.einvoice_carriertype = 'easycard'
+                        currentTransaction.data.einvoice_carriertype = 'easycard';
                         currentTransaction.data.einvoice_carrierid2 = einvoiceCarrierId;
                     }
 
