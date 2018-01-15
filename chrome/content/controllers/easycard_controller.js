@@ -3,21 +3,7 @@
     if (typeof AppController === 'undefined') {
         include('chrome://viviecr/content/controllers/app_controller.js');
     }
-    if (typeof ICERAPIRequest === 'undefined') {
-        include('chrome://easycard_payment/content/easycard/ICERAPIRequest.jsc');
-    }
-    if (typeof ICERAPIResponse === 'undefined') {
-        include('chrome://easycard_payment/content/easycard/ICERAPIResponse.jsc');
-    }
-    if (typeof SequenceModel === 'undefined') {
-        include('chrome://viviecr/content/models/sequence.js');
-    }
-    if (typeof EasycardTransaction === 'undefined') {
-        include('chrome://easycard_payment/content/models/easycard_transaction.js');
-    }
-
-    include('chrome://easycard_payment/content/libs/xml2json.min.js');
-
+    
     var mainWindow = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("Vivipos:Main");
     var extMgr = Components.classes["@mozilla.org/extensions/manager;1"].getService(Components.interfaces.nsIExtensionManager);
     var extItem = extMgr.getItemForID('viviecr@firich.com.tw');

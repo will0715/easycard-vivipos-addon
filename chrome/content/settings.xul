@@ -23,7 +23,7 @@
         <script type="application/x-javascript" src="chrome://vivipos/content/init_geckojs.js"/>
 
         <!-- include controller -->
-        <script src="chrome://easycard_payment/content/settings.js" type="application/x-javascript"/>
+        <script src="chrome://easycard_payment/content/overlay.js" type="application/x-javascript"/>
         <script src="chrome://easycard_payment/content/controllers/settings_controller.js" type="application/x-javascript"/>
 
         <keyset id="keyset_extensions">
