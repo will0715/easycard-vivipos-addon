@@ -22,10 +22,10 @@
         </em:targetApplication>
 
         <em:requires>
-            <!-- VIVILicense -->
+            <!-- Business Manager -->
             <Description>
-                <em:id>vivilicense@vivicloud.net</em:id>
-                <em:minVersion>1.0.0</em:minVersion>
+                <em:id>business_manager@vivicloud.net</em:id>
+                <em:minVersion>1.0.2</em:minVersion>
                 <em:maxVersion>1.*</em:maxVersion>
             </Description>
         </em:requires>

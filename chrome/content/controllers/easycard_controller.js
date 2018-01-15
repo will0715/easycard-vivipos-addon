@@ -1041,18 +1041,7 @@
 
         isServiceActivated: function() {
             //check service activation
-            if (!VivilicenseService.checkService('easycard', {
-                sp_id: GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.sp_id'),
-                location_id: GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.location_id')
-            })) {
-                GREUtils.Dialog.alert(this.topmostWindow,
-                    _('Expiration Warning'),
-                    _('service is not activated or expired, please contact your dealer for help', [_('(service)easycard')])
-                    );
-                return false;
-            }
-
-            return true;
+            return BusinessManagerService.checkService('easycard', true);
         }
     };
 
