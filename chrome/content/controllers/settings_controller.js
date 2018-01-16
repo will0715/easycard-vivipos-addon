@@ -16,8 +16,12 @@
             if (settings == null) {
                 settings = {};
             }
-            settings.ftp_username = iniObject.ftp.ftp_username;
-            settings.ftp_password = iniObject.ftp.ftp_password;
+            if (iniObject.ftp.ftp_username != "") {
+                settings.ftp_username = iniObject.ftp.ftp_username;
+            }
+            if (iniObject.ftp.ftp_password != "") {
+                settings.ftp_password = iniObject.ftp.ftp_password;
+            }
             this.Form.unserializeFromObject('settingForm', settings);
         },
 
@@ -86,7 +90,7 @@
                     var match = lines[x].match(regex.section);
                     value[match[1]] = {};
                     section = match[1];
-                } else if(line.length === 0 && section){
+                } else if(lines.length === 0 && section){
                     section = null;
                 };
 
@@ -177,11 +181,5 @@
     };
 
     GeckoJS.Controller.extend(__controller__);
-
-    window.addEventListener('load', function() {
-        $do('initial', null, 'EasycardSettings');
-    }, false);
-
-
 
 })();

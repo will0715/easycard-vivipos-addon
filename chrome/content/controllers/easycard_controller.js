@@ -146,14 +146,17 @@
             let flagInstallFile = GREUtils.File.chromeToPath('chrome://' + this.packageName + '/content/flags/first_install');
             if (GREUtils.File.exists(flagInstallFile) || !GREUtils.File.exists(icerapiProgram)) {
                 try {
-                    //first time install, prefs should be clean
-                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.cmas_port');
-                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.sp_id');
-                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.location_id');
-                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.ftp_username');
-                    GeckoJS.Configure.remove('vivipos.fec.settings.easycard_payment.ftp_password');
                     GREUtils.File.remove(flagInstallFile);
                     GREUtils.File.run('/bin/sh', ['-c', this._scriptPath + 'copyicerapi.sh' ], true);
+
+                    //restore settings after install finished
+                    this.restoreSettings();
+
+                    //remind to set settings
+                    GREUtils.Dialog.alert(this.topmostWindow,
+                                  _('Settings Check Alert'),
+                                  _('Please set up the easycard required settings first'));
+
                 } catch (e) {
                     this.log('ERROR', '[easycard]Copy scripts failed', e);
                 }
@@ -163,6 +166,14 @@
                 GREUtils.Dialog.alert(this.topmostWindow,
                                   _('Installation Alert'),
                                   _('Failed to install easycard library, please contact technical support.'));
+            }
+        },
+
+        restoreSettings: function() {
+            let easycardSettings = GeckoJS.Controller.getInstanceByName('EasycardSettings');
+            if (easycardSettings) {
+                let settings = easycardSettings.readSettings();
+                easycardSettings.writeSettings(settings);
             }
         },
 

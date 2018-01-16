@@ -11,6 +11,7 @@
     //load library
     include('chrome://easycard_payment/content/libs/xml2json.min.js');
 
+    include("chrome://easycard_payment/content/controllers/settings_controller.js");
     include("chrome://easycard_payment/content/controllers/easycard_controller.jsc");
 
 })();
