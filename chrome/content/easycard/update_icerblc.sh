@@ -5,22 +5,18 @@ icerapipath="/home/icerapi"
 
 cd ${scriptpath}
 
-source bash-ini-parser
-
 #set ftp information
-cfg_parser "icer_ftp.ini"
-cfg_section_ftp
-ftp_username=$ftp_username
-ftp_password=$ftp_password
+ftp_username=$1
+ftp_password=$2
 
 #change work directory to icerapi path
 cd ${icerapipath}
 
-#remove blc file older than 3 days
-find ${icerapipath}/BLC* -mtime +3 -exec rm {} \;
+#remove blc file older than 5 days
+find ${icerapipath}/BLC* -mtime +5 -exec rm {} \;
 
 #download blc file
-downloadblc=$(lftp -c "set ssl:verify-certificate no;open ftps://cmas-ftp.easycard.com.tw;user ${ftp_username} ${ftp_password};mirror ftpblc ${icerapipath};quit;" 2>&1)
+downloadblc=$(lftp -c "set ssl:verify-certificate no;open ftps://cmas-ftp.easycard.com.tw;user ${ftp_username} ${ftp_password};mget /ftpblc/*;quit;" 2>&1)
 latest_file=$(ls -tr | grep ".BIG$" | tail -n 1)
 
 blc_count=$(find ./BLC* | wc -l)
