@@ -133,7 +133,11 @@
         },
 
         updateICERblc: function() {
-            GREUtils.File.run('/bin/sh', ['-c',  '/usr/bin/timeout 30s ' + this._scriptPath + 'update_icerblc.sh' ], true);
+            let settingsController = GeckoJS.Controller.getInstanceByName('EasycardSettings');
+            let iniObject = settingsController.parseINIString(GREUtils.File.readAllBytes(this._scriptPath+'icer_ftp.ini').toString());
+            if (iniObject.ftp && (iniObject.ftp.ftp_username != "" && iniObject.ftp.ftp_password != "")) {
+                GREUtils.File.run('/bin/sh', ['-c',  '/usr/bin/timeout 30s ' + this._scriptPath + 'update_icerblc.sh "' + iniObject.ftp.ftp_username + '" "' + iniObject.ftp.ftp_password + '"' ], true);
+            }
             let result = GREUtils.File.readAllLine("/tmp/easycard_blc_uptodate");
             return (result == 1);
         },
