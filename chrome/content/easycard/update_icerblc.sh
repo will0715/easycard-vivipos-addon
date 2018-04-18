@@ -22,7 +22,7 @@ latest_file=$(ls -tr | grep ".BIG$" | tail -n 1)
 blc_count=$(find ./BLC* | wc -l)
 blc_uptodate_file="/tmp/easycard_blc_uptodate"
 
-if [ "$blc_count" -gt "1" ]; then
+if [ "$blc_count" -gt "0" ]; then
     echo 1 > ${blc_uptodate_file}
 else
     echo 0 > ${blc_uptodate_file}
