@@ -677,6 +677,74 @@
             }
         },
 
+        printSettlementInfo: function(result) {
+                //add by leochang 2018/07/13
+                this.log('WARN', 'In Query Mode');
+                
+                let batchNo = this._getBatchNo();
+                let hostSerialNum = this._getHostSerialNum();
+                let icerAPIRequest = new ICERAPIRequest(batchNo);
+                //let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(batchNo, icerAPIRequest.MESSAGE_TYPE["request"]);                
+                //18071201
+                //TXN_AMT_UNIT: 100,
+                let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo('18071201', icerAPIRequest.MESSAGE_TYPE["request"]);                 
+                transactionTotal.deduct_total = ICERAPIResponse.calAmount(transactionTotal.deduct_total);
+                transactionTotal.cancel_total = ICERAPIResponse.calAmount(transactionTotal.cancel_total);
+                transactionTotal.refund_total = ICERAPIResponse.calAmount(transactionTotal.refund_total);
+                transactionTotal.autoload_total = ICERAPIResponse.calAmount(transactionTotal.autoload_total);
+                transactionTotal.net_sale = ICERAPIResponse.calAmount(transactionTotal.net_sale);
+                transactionTotal.total = ICERAPIResponse.calAmount(transactionTotal.total);
+                this.log('WARN', 'transactionTotal object is ' + this.dump(transactionTotal));
+                this.log('WARN', 'ezcard transaction result is  ' + this.dump(result));
+                this.log('WARN', 'ezcard balance result is  ' + result[ICERAPIResponse.KEY_BALANCE]);
+                
+           var settlementData = {
+                terminal_no : result[ICERAPIResponse.KEY_BALANCE],
+                branch_id : 1,
+                sale_period : 1,
+                barcode1 : 1,
+                barcode2 : 1,
+                barcode3 : 1,
+                branch : 1,
+                amount : 1,
+                check_out_date : 1
+            };   
+                this.log('WARN', 'ezcard settlementData data is   ' + this.dump(settlementData));             
+                
+                     
+                let deviceController = GeckoJS.Controller.getInstanceByName('Devices');
+                let printerController = GeckoJS.Controller.getInstanceByName('Print');
+                let enabledDevices = deviceController.getEnabledDevices('receipt', this._receiptPrinter);
+                if (enabledDevices != null) {
+                    let template = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt') || 'easycard-receipt-58';
+                    let port = enabledDevices[0].port;
+                    let portspeed = enabledDevices[0].portspeed;
+                    let handshaking = enabledDevices[0].handshaking;
+                    let devicemodel = enabledDevices[0].devicemodel;
+                    let encoding = enabledDevices[0].encoding;
+                    let copies = 1;
+                    let store_data = GeckoJS.Session.get('storeContact');
+                    
+                    var data = {
+                        store : store_data,
+                        settleDBInfo : transactionTotal,
+                        settlementData: settlementData
+                    };                    
+                    var path = GREUtils.File.chromeToPath( 'chrome://easycard_payment/content/receipt/easycard-settlement-receipt-58.tpl' );
+
+                    var file = GREUtils.File.getFile( path );
+                    var tpl = GREUtils.Charset.convertToUnicode( GREUtils.File.readAllBytes( file ) );
+                    
+                    printerController.printReport( 'report', tpl, data );                
+                                      
+                    this.log('WARN', 'ezcard print data is   ' + this.dump(data));
+
+                    this.log('WARN', 'path template is   ' + path);
+                    //
+                }                    
+                //add end
+
+        },    
         easycardQuery: function() {
             
             if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
@@ -704,6 +772,9 @@
                     this._setWaitDescription(_('The balance of the easycard is %S', [balance]));
                     this.sleep(1500);
                 }
+                //add by leochang 2018/07/13            
+                this.printSettlementInfo(result); 
+                //add end   
             } catch (e) {
                 this.log('ERROR', '[easycard]Query failed', e);
             } finally {
@@ -753,6 +824,7 @@
                     this._resetBatchNo();
                     this._dialogPanel = this._showDialog(_('Easycard transaction log upload success!'));
                     this.sleep(1000);
+                    //this.printSettlementInfo();
                     return;
                 }
                 this._dialogPanel = this._showDialog(_('Easycard transaction log upload failed, please press the upload button at control panel'));

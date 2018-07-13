@@ -77,6 +77,15 @@
 
         getTotalByMsgTypeAndBatchNo: function(batchNo, messageType) {
             let result = {
+                deduct_count : 0,
+                deduct_total : 0,
+                cancel_count : 0,
+                cancel_total : 0,
+                refund_count : 0,
+                refund_total : 0,
+                autoload_count : 0,
+                autoload_total : 0,
+                net_sale : 0,
                 count: 0,
                 total: 0
             };
@@ -91,6 +100,24 @@
                 let txnTotal = 0;
                 for(let key in records) {
                     let record = records[key];
+                    //add by leochang 2018/07/13
+                    if(record.transaction_type == 'deduct'){
+                       result.deduct_count += 1;
+                       result.deduct_total += record.amount; 
+                    }
+                    if(record.transaction_type == 'cancel'){
+                       result.cancel_count += 1;
+                       result.cancel_total += record.amount; 
+                    }
+                    if(record.transaction_type == 'refund'){
+                       result.refund_count += 1;
+                       result.refund_total += record.amount; 
+                    }
+                    if(record.autoload_amount > 0){
+                       result.autoload_count += 1;
+                       result.autoload_total += record.autoload_amount; 
+                    }                                                                  
+                    //add end
                     result.count += 1;
                     txnTotal += record.amount;
                     txnTotal += record.autoload_amount;
@@ -99,6 +126,9 @@
                     }
                 }
                 result.total = txnTotal;
+                //add by leochang 2018/07/13
+                result.net_sale = result.deduct_total - result.cancel_total - result.refund_total;
+                //add end
             }
             return result;
         },
