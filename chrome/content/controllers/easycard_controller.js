@@ -298,10 +298,10 @@
                 var sequenceModel = new SequenceModel();   
 
                 var newSeq = sequenceModel.getLocalSequence(this._ezcardTXNSequenceKey);
-                GREUtils.log('new seq is ' + newSeq);
+                //GREUtils.log('new seq is ' + newSeq);
                 var newTransactionSeq = this.buildEasyCardOrderSequence(newSeq);
-                GREUtils.log('newTransactionSeq ' + GeckoJS.BaseObject.dump(newTransactionSeq));
-                GREUtils.log('newTransactionSeqNow ' + newTransactionSeq[1]);
+                //GREUtils.log('newTransactionSeq ' + GeckoJS.BaseObject.dump(newTransactionSeq));
+                //GREUtils.log('newTransactionSeqNow ' + newTransactionSeq[1]);
                 transactionSeq = newTransactionSeq[1];
             //add end
             let hostSerialNum = this._getHostSerialNum();
@@ -543,8 +543,8 @@
                 var newSeq = sequenceModel.getLocalSequence(this._ezcardTXNSequenceKey);
                 GREUtils.log('new seq is ' + newSeq);
                 var newTransactionSeq = this.buildEasyCardOrderSequence(newSeq);
-                GREUtils.log('newTransactionSeq ' + GeckoJS.BaseObject.dump(newTransactionSeq));
-                GREUtils.log('newTransactionSeqNow ' + newTransactionSeq[1]);
+                //GREUtils.log('newTransactionSeq ' + GeckoJS.BaseObject.dump(newTransactionSeq));
+                //GREUtils.log('newTransactionSeqNow ' + newTransactionSeq[1]);
                 transactionSeq = newTransactionSeq[1];
             //add end            
             let hostSerialNum = this._getHostSerialNum();
@@ -649,8 +649,8 @@
                 var newSeq = sequenceModel.getLocalSequence(this._ezcardTXNSequenceKey);
                 GREUtils.log('new seq is ' + newSeq);
                 var newTransactionSeq = this.buildEasyCardOrderSequence(newSeq);
-                GREUtils.log('newTransactionSeq ' + GeckoJS.BaseObject.dump(newTransactionSeq));
-                GREUtils.log('newTransactionSeqNow ' + newTransactionSeq[1]);
+                //GREUtils.log('newTransactionSeq ' + GeckoJS.BaseObject.dump(newTransactionSeq));
+                //GREUtils.log('newTransactionSeqNow ' + newTransactionSeq[1]);
                 transactionSeq = newTransactionSeq[1];
             //add end
 
@@ -875,15 +875,9 @@
     
 
                 var newSeq = sequenceModel.getLocalSequence(this._ezcardTXNSequenceKey);
-                GREUtils.log('new seq is ' + newSeq);
+                //GREUtils.log('new seq is ' + newSeq);
                 this.buildEasyCardOrderSequence(newSeq);
-                let template = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt') || 'easycard-receipt-58';
-                this.log('DEBUG','template  ' + this.dump(template));
-                if(template.indexOf('58') != -1){
-                	 this.log('DEBUG','58 Template');
-                }else{
-                	 this.log('DEBUG','not 58 Template'); 
-                }              	
+            	
                 //sequenceModel.resetLocalSequence(this._ezcardTXNSequenceKey,0);
                 //this.log('DEBUG','new sequence is   ' + this.dump(result));
 
