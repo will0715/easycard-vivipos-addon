@@ -11,7 +11,7 @@
   <ECC_Port>8902</ECC_Port>
   <ICER_IP>192.168.25.132</ICER_IP>
   <ICER_Port>5555</ICER_Port>
-  <CMAS_IP>211.78.134.165</CMAS_IP>
+  <CMAS_IP>cmas-gateway.easycard.com.tw</CMAS_IP>
   <CMAS_Port>7100</CMAS_Port>
   <TMLocationID>0000000001</TMLocationID>
   <TMID>01</TMID>
