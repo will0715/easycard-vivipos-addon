@@ -1,7 +1,4 @@
 var ICERAPIRequest = function(batchNo) {
-    this.signonSequence = '999999';
-    this.settlementSequence = '999998';
-    this.querySequence = '999997';
     this.TXN_AMT_UNIT = 100; //amount accurate to the second decimal place without decimal mark, ex. 10.01 -> 1001(10.01*100)
     this.batchNo = batchNo;
 };
@@ -27,11 +24,12 @@ ICERAPIRequest.prototype = {
      * @param {Integer} amount
      * @param {String} HOST serialNum
      * @param {String} transactionSeq
+     * @param {String} icerTXNSequence
      * @return {String} xml
      */
-    deductRequest: function(amount, hostSerialNum, transactionSeq) {
+    deductRequest: function(amount, hostSerialNum, transactionSeq, icerTXNSequence) {
         let requestBody = "<T0400>" + this.calAmount(amount) + "</T0400>";
-        requestBody += "<T1100>" + this.getTxnSequence(transactionSeq) + "</T1100>";
+        requestBody += "<T1100>" + icerTXNSequence + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T3701>" + transactionSeq + "</T3701>";
         return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.deduct, requestBody);
@@ -41,11 +39,12 @@ ICERAPIRequest.prototype = {
      * @param {Integer} amount
      * @param {String} HOST serialNum
      * @param {String} transactionSeq
+     * @param {String} icerTXNSequence
      * @return {String} xml
      */
-    refundRequest: function(amount, hostSerialNum, transactionSeq) {
+    refundRequest: function(amount, hostSerialNum, transactionSeq, icerTXNSequence) {
         let requestBody = "<T0400>" + this.calAmount(amount) + "</T0400>";
-        requestBody += "<T1100>" + this.getTxnSequence(transactionSeq) + "</T1100>";
+        requestBody += "<T1100>" + icerTXNSequence + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T3701>" + transactionSeq + "</T3701>";
         return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.refund, requestBody);
@@ -55,14 +54,15 @@ ICERAPIRequest.prototype = {
      * @param {Integer} cancel amount
      * @param {String} HOST serialNum
      * @param {String} transactionSeq
+     * @param {String} icerTXNSequence
      * @param {String} original device id
      * @param {String} original reference number
      * @param {String} original transaction date
      * @return {String} xml
      */
-    cancelRequest: function(cancelAmount, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate) {
+    cancelRequest: function(cancelAmount, hostSerialNum, transactionSeq, icerTXNSequence, oriDeviceId, oriRRN, oriTxnDate) {
         let requestBody = "<T0400>" + this.calAmount(cancelAmount) + "</T0400>";
-        requestBody += "<T1100>" + this.getTxnSequence(transactionSeq) + "</T1100>";
+        requestBody += "<T1100>" + icerTXNSequence + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T5581>" + oriDeviceId + "</T5581>";
         requestBody += "<T5582>" + oriRRN + "</T5582>";
@@ -73,11 +73,12 @@ ICERAPIRequest.prototype = {
     /**
      * get the query's request xml string
      * @param {String} HOST serialNum
+     * @param {String} icerTXNSequence
      * @return {String} xml
      */
-    queryRequest: function(hostSerialNum) {
+    queryRequest: function(hostSerialNum, icerTXNSequence) {
         let requestBody = "<T0400>000</T0400>";
-        requestBody += "<T1100>" + this.querySequence + "</T1100>";
+        requestBody += "<T1100>" + icerTXNSequence + "</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         return this._buildRequestXml(this.MESSAGE_TYPE.request, this.PROCESS_CODE.query, requestBody);
     },
@@ -86,10 +87,11 @@ ICERAPIRequest.prototype = {
      * @param {String} HOST serialNum
      * @param {Number} transaction count
      * @param {Number} transaction total
+     * @param {String} icerTXNSequence
      * @return {String} xml
      */
-    settlementRequest: function(hostSerialNum, transactionCount, transactionTotal) {
-        let requestBody = "<T1100>" + this.settlementSequence +"</T1100>";
+    settlementRequest: function(hostSerialNum, transactionCount, transactionTotal, icerTXNSequence) {
+        let requestBody = "<T1100>" + icerTXNSequence +"</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         requestBody += "<T5591>" + transactionCount + "</T5591>";
         requestBody += "<T5592>"
@@ -100,10 +102,11 @@ ICERAPIRequest.prototype = {
     /**
      * get the signon's request xml string
      * @param {String} HOST serialNum
+     * @param {String} icerTXNSequence
      * @return {String} xml
      */
-    signonRequest: function(hostSerialNum) {
-        let requestBody = "<T1100>" + this.signonSequence +"</T1100>";
+    signonRequest: function(hostSerialNum, icerTXNSequence) {
+        let requestBody = "<T1100>" + icerTXNSequence +"</T1100>";
         requestBody += "<T1101>" + hostSerialNum + "</T1101>";
         return this._buildRequestXml(this.MESSAGE_TYPE.signon, this.PROCESS_CODE.signon, requestBody);
     },
@@ -116,13 +119,6 @@ ICERAPIRequest.prototype = {
         let tmpAmount = amount*this.TXN_AMT_UNIT;
         let txnAmount = parseInt(Math.round(tmpAmount));
         return txnAmount;
-    },
-    /**
-     * get icerapi transaction sequence from POS transaction sequence
-     * @param {String} POS transaction sequence
-     */
-    getTxnSequence: function(transactionSeq) {
-        return GeckoJS.String.padLeft(transactionSeq.slice(-6), 6, "0");
     },
     /**
      * build the request xml string
