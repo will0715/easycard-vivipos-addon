@@ -15,6 +15,7 @@
         components: ['Acl'],
         uses: ['ShiftMarker'],
         _hostSequenceKey: 'easycardHostSeq',
+        _icerTXNSequenceKey: 'icerTXNSequenceKey',
         _cartController: null,
         _icerAPIPath: '/home/icerapi/',
         _icerAPIScript: "callicerapi.sh",
@@ -76,18 +77,20 @@
 
                 //reset batch no if batch no is expired and there is no transaction belongs to current batch no
                 let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
-                let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(prefBatchNo, (new ICERAPIRequest()).MESSAGE_TYPE["request"]);
-                let batchDate = prefBatchNo.substring(0,6);
-                let batchSeq = prefBatchNo.slice(-2);
-                let currentDate = (new Date()).toString('yyMMdd');
-                if (batchDate != currentDate && currentDate > batchDate) {
-                    if (transactionTotal && transactionTotal.count == 0) {
-                        this._resetBatchNo();
-                    } else {
-                        if (GREUtils.Dialog.confirm(this.topmostWindow,
-                            _('Settlement Alert'),
-                            _('Easycard transaction log is not uploaded, do you want to do it now?', [batchDate]))) {
-                            this.easycardSettlement();
+                if (prefBatchNo) {
+                    let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(prefBatchNo, (new ICERAPIRequest()).MESSAGE_TYPE["request"]);
+                    let batchDate = prefBatchNo.substring(0,6);
+                    let batchSeq = prefBatchNo.slice(-2);
+                    let currentDate = (new Date()).toString('yyMMdd');
+                    if (batchDate != currentDate && currentDate > batchDate) {
+                        if (transactionTotal && transactionTotal.count == 0) {
+                            this._resetBatchNo();
+                        } else {
+                            if (GREUtils.Dialog.confirm(this.topmostWindow,
+                                _('Settlement Alert'),
+                                _('Easycard transaction log is not uploaded, do you want to do it now?', [batchDate]))) {
+                                this.easycardSettlement();
+                            }
                         }
                     }
                 }
@@ -250,7 +253,6 @@
                                   _('Data Operation Error'),
                                   errmsg + '\n\n' + _('Please restart the machine, and if the problem persists, please contact technical support immediately.'));
         },
-
         /**
          * deduct transaction
          * @param {Boolean} receipt print mode, -1: no print 1: force print
@@ -288,7 +290,8 @@
                     this._setWaitDescription(_('Transaction failed, cannot pay with easycard'));
                     this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                    this._setWaitDescription(this._getErrorMsg(result));
+                    let message = this._getErrorMsg(result);
+                    this._setWaitDescription(message);
                     this.sleep(2000);
                 } else if (result[ICERAPIResponse.KEY_TXN_AMOUNT] > 0) {
                     let easycardTxnAmount = result[ICERAPIResponse.KEY_TXN_AMOUNT];
@@ -383,15 +386,17 @@
                     funcName = 'refundRequest';
                 break;
             }
+            let icerTXNSequence = this._getIcerTXNSequence();
             let icerAPIRequest = new ICERAPIRequest(batchNo);
-            let request = icerAPIRequest[funcName](remainTotal, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate);
+            let request = icerAPIRequest[funcName](remainTotal, hostSerialNum, transactionSeq, icerTXNSequence, oriDeviceId, oriRRN, oriTxnDate);
             let result = this._callICERAPI(request);
             //timeout or retry required
             if (!result || ICERAPIResponse.isRetryRequired(result)) {
                 for (let retryAttempts = 0; retryAttempts < 3; retryAttempts++) {
+
                     if (GREUtils.Dialog.confirm(this.topmostWindow, _('Retry payment'), _('Payment timeout, please check the device and easycard, press the OK button to retry payment'))) {
                         this.sleep(500);
-                        request = icerAPIRequest[funcName](remainTotal, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate);
+                        request = icerAPIRequest[funcName](remainTotal, hostSerialNum, transactionSeq, icerTXNSequence, oriDeviceId, oriRRN, oriTxnDate);
                         result = this._callICERAPI(request);
                         //return normal result
                         if (result && !ICERAPIResponse.isRetryRequired(result)) {
@@ -510,12 +515,14 @@
 
                             let batchNo = this._getBatchNo();
                             let result = this.processPayment('refund', batchNo, refundAmount, hostSerialNum, transactionSeq);
+
                             if (!result) {
                                 this._setWaitDescription(_('Transaction failed, cannot refund payment with easycard'));
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                                this._setWaitDescription(this._getErrorMsg(result));
+                                let message = this._getErrorMsg(result);
+                                this._setWaitDescription(message);
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || refundAmount != ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
@@ -573,6 +580,7 @@
             let currentTransaction = cart._getTransaction();
             let transactionId = currentTransaction != null ? currentTransaction.data.id : null;
             let transactionSeq = currentTransaction != null ? currentTransaction.data.seq : null;
+
             if (!transactionId) {
                 NotifyUtils.info(_('Data error, please contact technical support'));
                 return evt.preventDefault();
@@ -620,13 +628,15 @@
                             let oriDeviceId = easycardDetails[ICERAPIResponse.KEY_DEVICE_ID];
                             let oriRRN = easycardDetails[ICERAPIResponse.KEY_REFERENCE_NUM];
                             let oriTxnDate = easycardDetails[ICERAPIResponse.KEY_TXN_DATE];
+
                             let result = this.processPayment('cancel', batchNo, cancelAmount, hostSerialNum, transactionSeq, oriDeviceId, oriRRN, oriTxnDate);
                             if (!result) {
                                 this._setWaitDescription(_('Transaction failed, cannot cancel payment with easycard'));
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
-                                this._setWaitDescription(this._getErrorMsg(result));
+                                let message = this._getErrorMsg(result);
+                                this._setWaitDescription(message);
                                 this.sleep(2000);
                                 evt.preventDefault();
                             } else if (typeof result[ICERAPIResponse.KEY_TXN_AMOUNT] === 'undefined' || cancelAmount != ICERAPIResponse.calAmount(result[ICERAPIResponse.KEY_TXN_AMOUNT])) {
@@ -677,6 +687,65 @@
             }
         },
 
+        printSettlementInfo: function(result, batchNo) {
+                //add by leochang 2018/07/13
+                
+                let icerAPIRequest = new ICERAPIRequest(batchNo);
+                let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(batchNo, icerAPIRequest.MESSAGE_TYPE["request"]);                            
+                transactionTotal.deduct_total = ICERAPIResponse.calAmount(transactionTotal.deduct_total);
+                transactionTotal.cancel_total = ICERAPIResponse.calAmount(transactionTotal.cancel_total);
+                transactionTotal.refund_total = ICERAPIResponse.calAmount(transactionTotal.refund_total);
+                transactionTotal.autoload_total = ICERAPIResponse.calAmount(transactionTotal.autoload_total);
+                transactionTotal.net_sale = ICERAPIResponse.calAmount(transactionTotal.net_sale);
+                transactionTotal.total = ICERAPIResponse.calAmount(transactionTotal.total);
+                this.log('WARN', 'transactionTotal object is ' + this.dump(transactionTotal));
+                this.log('WARN', 'ezcard transaction result is  ' + this.dump(result));
+                this.log('WARN', 'ezcard balance result is  ' + result[ICERAPIResponse.KEY_B_FlAG]);
+                this.log('WARN', 'ezcard balance batch_no is  ' + result[ICERAPIResponse.KEY_BATCH_NO]);
+                
+                var settlementData = {
+                    balance_flag : result[ICERAPIResponse.KEY_B_FlAG],
+                    txnDate: this._formatDateTime(result[ICERAPIResponse.KEY_TXN_DATE], result[ICERAPIResponse.KEY_TXN_TIME]),
+                    deviceId : result[ICERAPIResponse.KEY_DEVICE_ID],
+                    batch_no : result[ICERAPIResponse.KEY_BATCH_NO]
+                };
+                this.log('WARN', 'ezcard settlementData data is   ' + this.dump(settlementData));             
+                     
+                let deviceController = GeckoJS.Controller.getInstanceByName('Devices');
+                let printerController = GeckoJS.Controller.getInstanceByName('Print');
+                let enabledDevices = deviceController.getEnabledDevices('receipt', this._receiptPrinter);
+                if (enabledDevices != null) {
+                    let template = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt') || 'easycard-receipt-58';
+                    let store_data = GeckoJS.Session.get('storeContact');
+                    
+                    var data = {
+                        store : store_data,
+                        settleDBInfo : transactionTotal,
+                        settlementData: settlementData
+                    };  
+                    let user = this.Acl.getUserPrincipal();
+                        var userDescription = this.Acl.getUserDescription(user.username);
+                        data.user = user.username;
+                        data.display_name = userDescription.displayname; 
+                    //add by leochang 2018/09/11, print settlement info    
+	                var path = '';        
+	                        
+	                if(template.indexOf('58') != -1){
+	                	 path = GREUtils.File.chromeToPath( 'chrome://easycard_payment/content/receipt/easycard-settlement-receipt-58.tpl' );
+	                }else{
+	                	 path = GREUtils.File.chromeToPath( 'chrome://easycard_payment/content/receipt/easycard-settlement-receipt-80.tpl' );
+	                } 
+	                //add end        
+                    var file = GREUtils.File.getFile( path );
+                    var tpl = GREUtils.Charset.convertToUnicode( GREUtils.File.readAllBytes( file ) );
+                    
+                    printerController.printReport( 'report', tpl, data );                
+                                      
+                    this.log('WARN', 'ezcard print data is   ' + this.dump(data));
+                }                    
+                //add end
+
+        },    
         easycardQuery: function() {
             
             if (!this.requiredSettingsCheck() || !this.isServiceActivated()) {
@@ -689,9 +758,10 @@
             let waitPanel = this._showWaitPanel(_('Transaction in progress'));
 
             try {
+                let icerTXNSequence = this._getIcerTXNSequence();
                 let hostSerialNum = this._getHostSerialNum();
                 let icerAPIRequest = new ICERAPIRequest(this._getBatchNo());
-                let request = icerAPIRequest.queryRequest(hostSerialNum);
+                let request = icerAPIRequest.queryRequest(hostSerialNum, icerTXNSequence);
                 let result = this._callICERAPI(request);
                 if (!result) {
                     this._setWaitDescription(_('Transaction failed, please present card again'));
@@ -704,6 +774,7 @@
                     this._setWaitDescription(_('The balance of the easycard is %S', [balance]));
                     this.sleep(1500);
                 }
+
             } catch (e) {
                 this.log('ERROR', '[easycard]Query failed', e);
             } finally {
@@ -741,18 +812,23 @@
             this._dialogPanel = this._showDialog(_('Easycard transaction log upload, check connection...'));
             try {
                 let batchNo = this._getBatchNo();
+                let icerTXNSequence = this._getIcerTXNSequence();
                 let hostSerialNum = this._getHostSerialNum();
                 let icerAPIRequest = new ICERAPIRequest(batchNo);
                 let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(batchNo, icerAPIRequest.MESSAGE_TYPE["request"]);
-                let request = icerAPIRequest.settlementRequest(hostSerialNum, transactionTotal.count, transactionTotal.total);
+                let request = icerAPIRequest.settlementRequest(hostSerialNum, transactionTotal.count, transactionTotal.total, icerTXNSequence);
                 let result = this._callICERAPI(request);
                 if (result && result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_SUCCESS) {
                     //reset sequence every settlement
                     SequenceModel.resetLocalSequence(this._hostSequenceKey, 0);
-                    //reset batch no when success settlement
+                    SequenceModel.resetLocalSequence(this._icerTXNSequenceKey, 0);
                     this._resetBatchNo();
+
+                    this.printSettlementInfo(result,batchNo); 
+
                     this._dialogPanel = this._showDialog(_('Easycard transaction log upload success!'));
                     this.sleep(1000);
+ 
                     return;
                 }
                 this._dialogPanel = this._showDialog(_('Easycard transaction log upload failed, please press the upload button at control panel'));
@@ -773,9 +849,10 @@
          * @return {Boolean}
          */
         easycardSignOn: function(retry) {
+            let icerTXNSequence = this._getIcerTXNSequence();
             let hostSerialNum = this._getHostSerialNum();
             let icerAPIRequest = new ICERAPIRequest();
-            let request = icerAPIRequest.signonRequest(hostSerialNum);
+            let request = icerAPIRequest.signonRequest(hostSerialNum, icerTXNSequence);
             let result = this._callICERAPI(request);
             if (!result || result[ICERAPIResponse.KEY_RETURN_CODE] != ICERAPIResponse.CODE_SUCCESS) {
                 if (retry) {
@@ -907,6 +984,14 @@
             return result;
         },
         /**
+         * get icer transaction sequence
+         * @return {String}
+         */
+        _getIcerTXNSequence: function() {
+            let sequenceNo = SequenceModel.getLocalSequence(this._icerTXNSequenceKey);
+            return GeckoJS.String.padLeft(sequenceNo, 6, "0");
+        },
+        /**
          * get host serial number
          * @return {String}
          */
@@ -1031,10 +1116,10 @@
         _getErrorMsg: function(result) {
             if (!result) return '';
             let errorMsg = _('Error ' + result[ICERAPIResponse.KEY_RETURN_CODE]);
-            if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_READER_ERROR) {
+            if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_READER_ERROR && typeof result[ICERAPIResponse.KEY_RESPONSE_CODE] != 'undefined') {
                 errorMsg = errorMsg+'\n'+_('Error ' + result[ICERAPIResponse.KEY_READER_RESPONSE_CODE]);
             }
-            if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_ICER_ERROR) {
+            if (result[ICERAPIResponse.KEY_RETURN_CODE] == ICERAPIResponse.CODE_ICER_ERROR && typeof result[ICERAPIResponse.KEY_RESPONSE_CODE] != 'undefined') {
                 errorMsg = _('Error 3900 ' + result[ICERAPIResponse.KEY_RESPONSE_CODE]);
             }
             return errorMsg;

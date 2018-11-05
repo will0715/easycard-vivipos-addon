@@ -29,18 +29,13 @@ if [[ "$action" == "setcomport" ]]; then
     sed $reg ICERINI.xml > ICERINI-new.xml
     mv ICERINI-new.xml ICERINI.xml
 
-    #write comport3
-    reg="s@<ComPort3>.*<\/ComPort3>@<ComPort3>${comportname}<\/ComPort3>@g"
-    sed $reg ICERINI.xml > ICERINI-new.xml
-    mv ICERINI-new.xml ICERINI.xml
-
     #write opencom
     reg="s@<OpenCom>.*<\/OpenCom>@<OpenCom>$comportindex<\/OpenCom>@g"
     sed $reg ICERINI.xml > ICERINI-new.xml
     mv ICERINI-new.xml ICERINI.xml
 elif [[ "$action" == "setspid" ]]; then
     spid=$2
-    reg="s@<SPID>.*<\/SPID>@<SPID>$spid<\/SPID>@g"
+    reg="s@<NewSPID>.*<\/NewSPID>@<NewSPID>$spid<\/NewSPID>@g"
     sed $reg ICERINI.xml > ICERINI-new.xml
     mv ICERINI-new.xml ICERINI.xml
 elif [[ "$action" == "setlocationid" ]]; then

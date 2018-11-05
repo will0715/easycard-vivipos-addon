@@ -39,10 +39,6 @@ ${'自動加值:'|left:16}${order.easycard.autoloadAmount}
 ${'交易金額:'|left:16}${order.easycard.txnAmount}
 ${'交易後餘額:'|left:16}${order.easycard.balance}
 [&CR]
-==========================================
-${'備註:若有疑問請洽'}[&CR]
-${'悠遊卡公司專線：412-8880'}
-${'(手機及金馬地區請加 02)'}
 [&CR]
 [&RESET]
 [&CR]
