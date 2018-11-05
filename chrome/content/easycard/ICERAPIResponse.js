@@ -15,6 +15,8 @@ var ICERAPIResponse = {
     KEY_TXN_DATE: "T1300",
     KEY_TXN_TIME: "T1200",
     KEY_EINVOICE_CARRIER_ID: "T0209",
+    KEY_B_FlAG: "T3912",
+    KEY_BATCH_NO :"T5501",
 
     CODE_SUCCESS: "0",
     CODE_RETRY: "-125",
@@ -45,7 +47,9 @@ var ICERAPIResponse = {
      * @return {Object | null}
      */
     isRetryRequired: function(response) {
-        return (response[this.KEY_RETURN_CODE] == this.CODE_RETRY || (response[this.KEY_RETURN_CODE] == "-119" && response[this.KEY_READER_RESPONSE_CODE].indexOf("62") == 0)) ? true : false;
+    	//alert('response[this.KEY_RETURN_CODE] : ' + response[this.KEY_RETURN_CODE]);
+        //return (response[this.KEY_RETURN_CODE] == this.CODE_RETRY || (response[this.KEY_RETURN_CODE] == "-119" && response[this.KEY_READER_RESPONSE_CODE].indexOf("62") == 0) && "\n交易逾時,請確認卡片餘額") ? true : false;
+    	return (response[this.KEY_RETURN_CODE] == this.CODE_RETRY || (response[this.KEY_RETURN_CODE] == "-119" && response[this.KEY_READER_RESPONSE_CODE].indexOf("62") == 0)) ? true : false;
     }
 
 };
