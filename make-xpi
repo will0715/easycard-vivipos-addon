@@ -30,6 +30,7 @@ sed $regsum install.rdf > install-sum.rdf
 mv install-sum.rdf install.rdf
 
 if [ "$1" != "production" ]; then
+  filename=(test)${filename}
   reg="s/<em:version>.*<\/em:version>/<em:version>${version}.${rel_date}<\/em:version>/g"
   sed $reg install.rdf > install-new.rdf
   mv install-new.rdf install.rdf
