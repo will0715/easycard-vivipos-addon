@@ -77,18 +77,20 @@
 
                 //reset batch no if batch no is expired and there is no transaction belongs to current batch no
                 let prefBatchNo = GeckoJS.Configure.read(this._prefsPrefix+'.batchNo');
-                let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(prefBatchNo, (new ICERAPIRequest()).MESSAGE_TYPE["request"]);
-                let batchDate = prefBatchNo.substring(0,6);
-                let batchSeq = prefBatchNo.slice(-2);
-                let currentDate = (new Date()).toString('yyMMdd');
-                if (batchDate != currentDate && currentDate > batchDate) {
-                    if (transactionTotal && transactionTotal.count == 0) {
-                        this._resetBatchNo();
-                    } else {
-                        if (GREUtils.Dialog.confirm(this.topmostWindow,
-                            _('Settlement Alert'),
-                            _('Easycard transaction log is not uploaded, do you want to do it now?', [batchDate]))) {
-                            this.easycardSettlement();
+                if (prefBatchNo) {
+                    let transactionTotal = (new EasycardTransaction()).getTotalByMsgTypeAndBatchNo(prefBatchNo, (new ICERAPIRequest()).MESSAGE_TYPE["request"]);
+                    let batchDate = prefBatchNo.substring(0,6);
+                    let batchSeq = prefBatchNo.slice(-2);
+                    let currentDate = (new Date()).toString('yyMMdd');
+                    if (batchDate != currentDate && currentDate > batchDate) {
+                        if (transactionTotal && transactionTotal.count == 0) {
+                            this._resetBatchNo();
+                        } else {
+                            if (GREUtils.Dialog.confirm(this.topmostWindow,
+                                _('Settlement Alert'),
+                                _('Easycard transaction log is not uploaded, do you want to do it now?', [batchDate]))) {
+                                this.easycardSettlement();
+                            }
                         }
                     }
                 }
@@ -772,18 +774,6 @@
                     this._setWaitDescription(_('The balance of the easycard is %S', [balance]));
                     this.sleep(1500);
                 }
-                //this.printSettlementInfo(result,'18071201');
-                //this.log('ezcardTXNSequenceStr is ' + ezcardTXNSequenceStr);
-
-                var sequenceModel = new SequenceModel();
-    
-
-                var newSeq = sequenceModel.getLocalSequence(this._ezcardTXNSequenceKey);
-                //GREUtils.log('new seq is ' + newSeq);
-                this.buildEasyCardOrderSequence(newSeq);
-            	
-                //sequenceModel.resetLocalSequence(this._ezcardTXNSequenceKey,0);
-                //this.log('DEBUG','new sequence is   ' + this.dump(result));
 
             } catch (e) {
                 this.log('ERROR', '[easycard]Query failed', e);
