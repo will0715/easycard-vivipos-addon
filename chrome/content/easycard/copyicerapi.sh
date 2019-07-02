@@ -25,3 +25,16 @@ cd ${destination}
 
 ln -s ./libssl/libssl.so libssl.so.1.0.0
 ln -s ./libssl/libcrypto.so libcrypto.so.1.0.0
+
+# check the [timeout] bin file for MP3275A
+LSB_RELEASE=`lsb_release -s -c`
+checkfile1="/usr/local/bin/timeout"
+checkfile2="/usr/bin/timeout"
+
+if [ ! -f "$checkfile1" ] && [ X"$LSB_RELEASE" = X"hardy" ]; then
+    cp -rf timeout-hardy /usr/local/bin/timeout
+fi
+
+if [ ! -f "$checkfile2" ] && [ X"$LSB_RELEASE" = X"hardy" ]; then
+    cp -rf timeout-hardy /usr/bin/timeout
+fi
