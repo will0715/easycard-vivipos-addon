@@ -1042,7 +1042,9 @@
 
         isServiceActivated: function() {
             //check service activation
-            return BusinessManagerService.checkService('easycard', true);
+            return true;
+            // remove BM service check
+            // return BusinessManagerService.checkService('easycard', true);
         }
     };
 
