@@ -12,3 +12,4 @@
 <!ENTITY settings.label.template_80 "悠遊卡收據(80mm)">
 <!ENTITY settings.label.button_settlement "悠遊卡機交易資料上傳">
 <!ENTITY settings.label.batch_no "當前悠遊卡交易批號:">
+<!ENTITY settings.label.print_settlement "是否自動列印日結單據">

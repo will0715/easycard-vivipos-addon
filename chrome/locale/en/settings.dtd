@@ -12,3 +12,4 @@
 <!ENTITY settings.label.template_80 "Easycard receipt(80mm)">
 <!ENTITY settings.label.button_settlement "Manaul Settlement">
 <!ENTITY settings.label.batch_no "Current Batch Number:">
+<!ENTITY settings.label.print_settlement "Auto print settlement receipt">

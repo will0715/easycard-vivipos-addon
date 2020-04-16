@@ -105,6 +105,11 @@
                                                 <label value="&settings.label.batch_no;"/>
                                                 <textbox value="" readonly="true" form="settingForm" name="batchNo"/>
                                             </vbox>
+                                            <vbox>
+                                                <hbox>
+                                                    <checkbox id="print_settlement" value="false" label="&settings.label.print_settlement;" form="settingForm" name="print_settlement" checked="true"/>
+                                                </hbox>
+                                            </vbox>
                                         </row>
                                     </rows>
                                 </grid>

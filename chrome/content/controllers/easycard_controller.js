@@ -61,6 +61,7 @@
             }
 
             this._receiptPrinter = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.easycard-receipt-device') || 1;
+            this._autoPrint = GeckoJS.Configure.read('vivipos.fec.settings.easycard_payment.print_settlement') || true;
             
             //startup sign on to get machine ready.
             this._dialogPanel = this._showDialog(_('Easycard sign on is processing, pelase wait...'));
@@ -824,7 +825,9 @@
                     SequenceModel.resetLocalSequence(this._icerTXNSequenceKey, 0);
                     this._resetBatchNo();
 
-                    this.printSettlementInfo(result,batchNo); 
+                    if (this._autoPrint) {
+                        this.printSettlementInfo(result, batchNo); 
+                    }
 
                     this._dialogPanel = this._showDialog(_('Easycard transaction log upload success!'));
                     this.sleep(1000);
@@ -1127,7 +1130,9 @@
 
         isServiceActivated: function() {
             //check service activation
-            return BusinessManagerService.checkService('easycard', true);
+            return true;
+            // remove BM Service check
+            // return BusinessManagerService.checkService('easycard', true);
         }
     };
 
